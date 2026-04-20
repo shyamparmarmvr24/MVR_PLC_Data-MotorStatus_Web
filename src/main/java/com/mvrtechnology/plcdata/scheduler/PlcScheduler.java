@@ -22,7 +22,7 @@ public class PlcScheduler
     private ISolarAndEnergyDataRepoImpl solarAndEnergyRepo;
 
     @Autowired
-    private IEffluentDataRepoImpl effluentRepo;
+    private IEffluentDataService effluentRepo;
 
     private final ExecutorService executor =
             new java.util.concurrent.ThreadPoolExecutor(
@@ -32,7 +32,7 @@ public class PlcScheduler
                     new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy()
             );
 
-    @Scheduled(fixedRate = 300000) // 5 minutes
+    @Scheduled(fixedRate = 300000)
     public void fetchAllPlantsData()
     {
         List<PlantDetails> plants = plantRepo.findAll();

@@ -1,83 +1,96 @@
 package com.mvrtechnology.plcdata.service;
 import com.mvrtechnology.plcdata.dtos.MotorStatusDTO;
-import com.mvrtechnology.plcdata.util.CoilAddresses;
 import com.mvrtechnology.plcdata.util.ModbusReader;
 import com.ghgande.j2mod.modbus.net.TCPMasterConnection;
 import org.springframework.stereotype.Service;
 
 @Service
-public class MotorStatusService {
+public class MotorStatusService
+{
 
-    public MotorStatusDTO fetchMotorStatus(TCPMasterConnection connection) {
+    public MotorStatusDTO fetchMotorStatus(TCPMasterConnection connection)
+    {
 
         MotorStatusDTO dto = new MotorStatusDTO();
 
         try {
-            dto.setEmg(ModbusReader.readCoil(connection, CoilAddresses.EMG+1));
-            dto.setSm400(ModbusReader.readCoil(connection, CoilAddresses.SM400+1));
 
-            dto.setTreatedWaterPumpOnOf(ModbusReader.readCoil(connection, CoilAddresses.TREATED_WATER_PUMP_ON_OF+1));
-            dto.setSludgeSubPumpOnOf(ModbusReader.readCoil(connection, CoilAddresses.SLUDGE_SUB_PUMP_ON_OF+1));
-            dto.setPyroExhaustFanOnOf(ModbusReader.readCoil(connection, CoilAddresses.PYRO_EXHAUST_FAN_ON_OF+1));
-            dto.setPyroBlowerOnOf(ModbusReader.readCoil(connection, CoilAddresses.PYRO_BLOWER_ON_OF+1));
+            int b1Base = 8392;
+            boolean[] b1 = ModbusReader.readMultipleCoils(connection, b1Base, 30);
 
-            dto.setPolyDosingOnOf(ModbusReader.readCoil(connection, CoilAddresses.POLY_DOSING_ON_OF+1));
-            dto.setNonSubPumpOnOf(ModbusReader.readCoil(connection, CoilAddresses.NON_SUB_PUMP_ON_OF+1));
-            dto.setMcCleaningOnOf(ModbusReader.readCoil(connection, CoilAddresses.M_C_CLEANING_ON_OF+1));
-            dto.setFilterFeedPumpOnOf(ModbusReader.readCoil(connection, CoilAddresses.FILTER_FEED_PUMP_ON_OF+1));
+            int b2Base = 8492;
+            boolean[] b2 = ModbusReader.readMultipleCoils(connection, b2Base, 20);
 
-            dto.setCheDosPumpOnOf(ModbusReader.readCoil(connection, CoilAddresses.CHE_DOS_PUMP_ON_OF+1));
-            dto.setBlowerOnOf(ModbusReader.readCoil(connection, CoilAddresses.BLOWER_ON_OF+1));
-            dto.setWaterSubPumpOnOf(ModbusReader.readCoil(connection, CoilAddresses.WATER_SUB_PUMP_ON_OF+1));
-            dto.setUnderWaterPumpOnOf(ModbusReader.readCoil(connection, CoilAddresses.UNDER_WATER_PUMP_ON_OF+1));
+            int b3Base = 8504;
+            boolean[] b3 = ModbusReader.readMultipleCoils(connection, b3Base, 25);
 
-            dto.setWaterBoosterPumpOnOf(ModbusReader.readCoil(connection, CoilAddresses.WATER_BOSTER_PUMP_ON_OF+1));
-            dto.setSrs1OnOf(ModbusReader.readCoil(connection, CoilAddresses.SRS_1_ON_OFF+1));
-            dto.setSrs2OnOf(ModbusReader.readCoil(connection, CoilAddresses.SRS_2_ON_OFF+1));
-            dto.setPolymerMixerOnOf(ModbusReader.readCoil(connection, CoilAddresses.POLYMERMIXER_ON_OFF+1));
+            dto.setSrs1OnOf(b1[8392 - b1Base]);
+            dto.setSrs2OnOf(b1[8393 - b1Base]);
+            dto.setPolymerMixerOnOf(b1[8394 - b1Base]);
+            dto.setDewateringMixerOnOf(b1[8395 - b1Base]);
+            dto.setDewateringScrew1_2OnOf(b1[8396 - b1Base]);
+            dto.setScrewConveyor1OnOf(b1[8397 - b1Base]);
+            dto.setDryerOnOf(b1[8398 - b1Base]);
+            dto.setDucting1_2OnOf(b1[8399 - b1Base]);
+            dto.setScrewConveyor2OnOf(b1[8400 - b1Base]);
+            dto.setPyro1OnOf(b1[8401 - b1Base]);
+            dto.setPyro2OnOf(b1[8402 - b1Base]);
 
-            dto.setDewateringMixerOnOf(ModbusReader.readCoil(connection, CoilAddresses.DEWATERINGMIXER_ON_OFF+1));
-            dto.setDewateringScrew1_2OnOf(ModbusReader.readCoil(connection, CoilAddresses.DEWATERINGSCREW_1_2_ON_OFF+1));
-            dto.setScrewConveyor1OnOf(ModbusReader.readCoil(connection, CoilAddresses.SCREWCONVEYOR_1_ON_OFF+1));
-            dto.setDryerOnOf(ModbusReader.readCoil(connection, CoilAddresses.DRYER_ON_OFF+1));
+            dto.setSludgeSubPumpOnOf(b1[8404 - b1Base]);
+            dto.setFilterFeedPumpOnOf(b1[8405 - b1Base]);
+            dto.setCheDosPumpOnOf(b1[8406 - b1Base]);
+            dto.setPyroExhaustFanOnOf(b1[8407 - b1Base]);
+            dto.setTreatedWaterPumpOnOf(b1[8408 - b1Base]);
+            dto.setNonSubPumpOnOf(b1[8409 - b1Base]);
+            dto.setPyroBlowerOnOf(b1[8410 - b1Base]);
+            dto.setPolyDosingOnOf(b1[8411 - b1Base]);
+            dto.setBlowerOnOf(b1[8412 - b1Base]);
+            dto.setMcCleaningOnOf(b1[8413 - b1Base]);
+            dto.setWaterBoosterPumpOnOf(b1[8415 - b1Base]);
+            dto.setUnderWaterPumpOnOf(b1[8416 - b1Base]);
+            dto.setWaterSubPumpOnOf(b1[8417 - b1Base]);
 
-            dto.setDucting1_2OnOf(ModbusReader.readCoil(connection, CoilAddresses.DUCTING_1_2_ON_OFF+1));
-            dto.setScrewConveyor2OnOf(ModbusReader.readCoil(connection, CoilAddresses.SCREWCONVEYOR_2_ON_OFF+1));
-            dto.setPyro1OnOf(ModbusReader.readCoil(connection, CoilAddresses.PYRO_1_ON_OFF+1));
-            dto.setPyro2OnOf(ModbusReader.readCoil(connection, CoilAddresses.PYRO_2_ON_OFF+1));
+            dto.setSrs1MotorTrip(b2[8492 - b2Base]);
+            dto.setSrs2MotorTrip(b2[8493 - b2Base]);
+            dto.setPolymerMixerTrip(b2[8494 - b2Base]);
+            dto.setDewateringMixerTrip(b2[8495 - b2Base]);
+            dto.setDewateringScrewPress1Trip(b2[8496 - b2Base]);
+            dto.setScrewConveyor1Trip(b2[8497 - b2Base]);
+            dto.setDryerMotorTrip(b2[8498 - b2Base]);
+            dto.setDuctingMotor1Trip(b2[8499 - b2Base]);
+            dto.setScrewConveyor2Trip(b2[8500 - b2Base]);
+            dto.setPyrolizerMotor1Trip(b2[8501 - b2Base]);
+            dto.setPyrolizerMotor2Trip(b2[8502 - b2Base]);
+            dto.setDuctingMotor2Trip(b2[8503 - b2Base]);
 
-            dto.setSubmersiblePumpTrip(ModbusReader.readCoil(connection, CoilAddresses.SUBMERSIBLE_PUMP_TRIP+1));
-            dto.setFilterFeedPumpTrip(ModbusReader.readCoil(connection, CoilAddresses.FILTER_FEED_PUMPTRIP+1));
-            dto.setChemicalDosingPumpTrip(ModbusReader.readCoil(connection, CoilAddresses.CHEMICAL_DOSING_PUMPTRIP+1));
-            dto.setPyrolyzerExhaustFanTrip(ModbusReader.readCoil(connection, CoilAddresses.PYROLYZER_EXHAUST_FANTRIP+1));
-            dto.setNonSubmersiblePumpTrip(ModbusReader.readCoil(connection, CoilAddresses.NON_SUBMERSIBLE_PUMPTRIP+1));
-            dto.setPyrolyzerBlowerFanTrip(ModbusReader.readCoil(connection, CoilAddresses.PYROLYZER_BLOWER_FANTRIP+1));
+            dto.setSubmersiblePumpTrip(b3[8504 - b3Base]);
+            dto.setFilterFeedPumpTrip(b3[8506 - b3Base]);
+            dto.setChemicalDosingPumpTrip(b3[8508 - b3Base]);
+            dto.setPyrolyzerExhaustFanTrip(b3[8510 - b3Base]);
+            dto.setTreatedWaterPumpTrip(b3[8512 - b3Base]);
+            dto.setNonSubmersiblePumpTrip(b3[8514 - b3Base]);
+            dto.setPyrolyzerBlowerFanTrip(b3[8516 - b3Base]);
+            dto.setPolymerDosingMotorTrip(b3[8518 - b3Base]);
+            dto.setBlowerMotorTrip(b3[8520 - b3Base]);
+            dto.setDeWateringScrewPress2Trip(b3[8522 - b3Base]);
+            dto.setPressurePumpTrip(b3[8523 - b3Base]);
+            dto.setEmergencyBottonPressed(b3[8524 - b3Base]);
 
-            dto.setPolymerDosingMotorTrip(ModbusReader.readCoil(connection, CoilAddresses.POLYMER_DOSING_MOTORTRIP+1));
-            dto.setBlowerMotorTrip(ModbusReader.readCoil(connection, CoilAddresses.BLOWER_MOTORTRIP+1));
-            dto.setSrs1MotorTrip(ModbusReader.readCoil(connection, CoilAddresses.SRS_1_MOTOR_TRIP+1));
-            dto.setSrs2MotorTrip(ModbusReader.readCoil(connection, CoilAddresses.SRS_2_MOTOR_TRIP+1));
-            dto.setDewateringMixerTrip(ModbusReader.readCoil(connection, CoilAddresses.DE_WATERING_MIXER_TRIP+1));
-            dto.setDewateringScrewPress1Trip(ModbusReader.readCoil(connection, CoilAddresses.DE_WATERING_SCREW_PRESS_1_TRIP+1));
+            dto.setEmg(ModbusReader.readCoil(connection, 1001));
+            dto.setSm400(ModbusReader.readCoil(connection, 20881));
 
-            dto.setPolymerMixerTrip(ModbusReader.readCoil(connection, CoilAddresses.POLYMER_MIXER_TRIP+1));
-            dto.setScrewConveyor1Trip(ModbusReader.readCoil(connection, CoilAddresses.SCREW_CONV_1_TRIP+1));
-            dto.setScrewConveyor2Trip(ModbusReader.readCoil(connection, CoilAddresses.SCREW_CONV_2_TRIP+1));
-            dto.setDryerMotorTrip(ModbusReader.readCoil(connection, CoilAddresses.DRYER_MOTOR_TRIP+1));
-            dto.setPyrolizerMotor1Trip(ModbusReader.readCoil(connection, CoilAddresses.PYROLYZER_MOTOR_1_TRIP+1));
-            dto.setPyrolizerMotor2Trip(ModbusReader.readCoil(connection, CoilAddresses.PYROLYZER_MOTOR_2_TRIP+1));
-
-            dto.setDuctingMotor1Trip(ModbusReader.readCoil(connection, CoilAddresses.DUCTING_MOTOR_1_TRIP+1));
-            dto.setDuctingMotor2Trip(ModbusReader.readCoil(connection, CoilAddresses.DUCTING_MOTOR_2_TRIP+1));
-            dto.setTreatedWaterPumpTrip(ModbusReader.readCoil(connection, CoilAddresses.TREATED_WATER_PUMP_TRIP+1));
-            dto.setPressurePumpTrip(ModbusReader.readCoil(connection, CoilAddresses.PRESSURE_PUMP_TRIP+1));
-            dto.setEmergencyBottonPressed(ModbusReader.readCoil(connection, CoilAddresses.EMERGENCY_BUTTON_PRESSED+1));
-            dto.setDeWateringScrewPress2Trip(ModbusReader.readCoil(connection, CoilAddresses.DE_WATERING_SCREW_PRESS__2_TRIP+1));
+//            temperature
+            dto.setHotWaterOutlet(ModbusReader.readWord(connection,40504)*0.1);
+            dto.setHotWaterInlet(ModbusReader.readWord(connection,40503)*0.1);
+            dto.setExhaustChimney(ModbusReader.readWord(connection,40502)*0.1);
+            dto.setPyrolyzerMiddle(ModbusReader.readWord(connection,40501)*0.1);
+            dto.setPyrolyzerBottom(ModbusReader.readWord(connection,40500)*0.1);
+            dto.setScreenChamberLevel(ModbusReader.readWord(connection,40602)*1.0);
 
         }
         catch (Exception e)
         {
-            throw new RuntimeException("Motor PLC Read Failed"+ e +" "+e.getMessage());
+            throw new RuntimeException("PLC Read Failed : " + e.getMessage());
         }
 
         return dto;

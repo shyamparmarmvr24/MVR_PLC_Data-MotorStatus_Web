@@ -1,11 +1,13 @@
 package com.mvrtechnology.plcdata.dtos;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
-public class PlantMotorResponseDTO {
-
+@Getter
+@Setter
+public class PlantInfoDto
+{
     private Integer plantId;
     private String plantName;
     private Integer zone;
-    private MotorStatusDTO motorStatus;
+    private Boolean plcStatusSM400;
 }

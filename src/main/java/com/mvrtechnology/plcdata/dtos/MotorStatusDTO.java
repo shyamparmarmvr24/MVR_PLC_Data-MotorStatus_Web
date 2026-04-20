@@ -58,4 +58,12 @@ public class MotorStatusDTO
     private Boolean pressurePumpTrip;
     private Boolean emergencyBottonPressed;
     private Boolean deWateringScrewPress2Trip;
+
+    //    temperatures
+    private Double hotWaterOutlet;
+    private Double hotWaterInlet;
+    private Double exhaustChimney;
+    private Double pyrolyzerMiddle;
+    private Double pyrolyzerBottom;
+    private Double screenChamberLevel;
 }

@@ -52,7 +52,7 @@ public class SolarAndEnergyDataServiceImpl implements ISolarAndEnergyDataService
         }
         catch (Exception e)
         {
-           return null;
+            return null;
         }
     }
 

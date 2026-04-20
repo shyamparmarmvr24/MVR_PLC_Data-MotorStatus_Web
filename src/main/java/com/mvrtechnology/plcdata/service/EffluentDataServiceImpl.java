@@ -1,7 +1,11 @@
 package com.mvrtechnology.plcdata.service;
+import com.mvrtechnology.plcdata.dtos.PlantEffluentResponseDTO;
 import com.mvrtechnology.plcdata.entity.*;
+import com.mvrtechnology.plcdata.repository.IEffluentDataRepo;
+import com.mvrtechnology.plcdata.repository.IEffluentDataRepoImpl;
 import com.mvrtechnology.plcdata.util.ModbusReader;
 import com.ghgande.j2mod.modbus.net.TCPMasterConnection;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -11,6 +15,11 @@ import java.time.LocalDateTime;
 @Service
 public class EffluentDataServiceImpl implements IEffluentDataService
 {
+    @Autowired
+    private IEffluentDataRepoImpl effluentRepo;
+
+    @Autowired
+    private IEffluentDataRepo eRepo;
 
     @Override
     public EffluentData fetchAndSaveEffluentData(PlantDetails plant, TCPMasterConnection connection)
@@ -38,12 +47,41 @@ public class EffluentDataServiceImpl implements IEffluentDataService
             data.setDateAndTimeOfEffluent(LocalDateTime.now());
             data.setOperationDate(LocalDate.now());
 
-            return data;
+            if (data != null && !isAllZero(data))
+            {
+                return eRepo.save(data);
+            }
+
+            System.out.println("Skipped zero data for plant: " + plant.getPlantName());
+            return null;
         }
         catch (Exception e)
         {
             return null;
         }
+    }
+
+    private boolean isAllZero(EffluentData d)
+    {
+        return isZero(d.getPH()) &&
+                isZero(d.getCod()) &&
+                isZero(d.getBod()) &&
+                isZero(d.getTss()) &&
+                isZero(d.getTemperature()) &&
+                isZero(d.getTN()) &&
+                isZero(d.getFlow()) &&
+                isZero(d.getVelocity()) &&
+                isZero(d.getCumulativeFlow());
+    }
+
+    @Override
+    public PlantEffluentResponseDTO getLatestByPlant(Integer plantId) {
+        return effluentRepo.getLatestByPlant(plantId);
+    }
+
+    private boolean isZero(BigDecimal val)
+    {
+        return val == null || val.compareTo(BigDecimal.ZERO) == 0;
     }
 
     private BigDecimal round2(double val)
