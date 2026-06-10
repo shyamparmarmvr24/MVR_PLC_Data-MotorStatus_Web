@@ -1,38 +1,15 @@
-package com.mvrtechnology.plcdata.entity;
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import jakarta.persistence.*;
-import lombok.*;
+package com.mvrtechnology.plcdata.dtos;
+import lombok.Getter;
+import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "SolarAndEnergyData",
-        indexes = {
-                @Index(name = "idx_solar_plant_datetime",
-                        columnList = "Plant_Id,date_And_Time_Of_Solar_And_Energy")
-        }
-)
 @Getter
 @Setter
-@AllArgsConstructor
-@NoArgsConstructor
-public class SolarAndEnergyData
+public class SolarDataResponseDTO
 {
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "solar_and_energy_seq")
-    @SequenceGenerator(
-            name = "solar_and_energy_seq",
-            sequenceName = "SolarAndEnergySeq",
-            allocationSize = 1,
-            initialValue = 1
-    )
     private Long operationID;
-
-    @ManyToOne
-    @JoinColumn(name = "Plant_Id", referencedColumnName = "Plant_Id")
-    @JsonBackReference
-    private PlantDetails plantDetails;
 
     private BigDecimal dailyActProduction;
 
@@ -68,8 +45,9 @@ public class SolarAndEnergyData
 
     private BigDecimal activeEnergy;
 
+    private BigDecimal activeEnergyConsumption;
+
     private LocalDateTime dateAndTimeOfSolarAndEnergy;
 
     private LocalDate operationDate;
-
 }

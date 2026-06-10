@@ -2,20 +2,18 @@ package com.mvrtechnology.plcdata.cache;
 import com.mvrtechnology.plcdata.entity.PlantDetails;
 import com.mvrtechnology.plcdata.repository.IPlantDetailsRepo;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class PlantCache {
-
-    private final IPlantDetailsRepo repo;
+public class PlantCache
+{
+    @Autowired
+    private IPlantDetailsRepo repo;
 
     private final ConcurrentHashMap<Integer, PlantDetails> cache = new ConcurrentHashMap<>();
-
-    public PlantCache(IPlantDetailsRepo repo) {
-        this.repo = repo;
-    }
 
     @PostConstruct
     public void load() {

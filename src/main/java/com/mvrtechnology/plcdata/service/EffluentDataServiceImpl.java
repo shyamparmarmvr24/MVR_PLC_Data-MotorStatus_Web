@@ -1,4 +1,6 @@
 package com.mvrtechnology.plcdata.service;
+import com.mvrtechnology.plcdata.dtos.EffluentDailyAverageDTO;
+import com.mvrtechnology.plcdata.dtos.EffluentDayDataDTO;
 import com.mvrtechnology.plcdata.dtos.PlantEffluentResponseDTO;
 import com.mvrtechnology.plcdata.entity.*;
 import com.mvrtechnology.plcdata.repository.IEffluentDataRepo;
@@ -11,6 +13,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
 
 @Service
 public class EffluentDataServiceImpl implements IEffluentDataService
@@ -47,12 +51,13 @@ public class EffluentDataServiceImpl implements IEffluentDataService
             data.setDateAndTimeOfEffluent(LocalDateTime.now());
             data.setOperationDate(LocalDate.now());
 
-            if (data != null && !isAllZero(data))
+            if (Boolean.TRUE.equals(data.getFilterFeedPumpStatus()))
             {
-                return eRepo.save(data);
+                if (!isAllZero(data) && data.getFlow() != null && data.getFlow().compareTo(BigDecimal.valueOf(0.5)) >= 0)
+                {
+                    return eRepo.save(data);
+                }
             }
-
-            System.out.println("Skipped zero data for plant: " + plant.getPlantName());
             return null;
         }
         catch (Exception e)
@@ -77,6 +82,16 @@ public class EffluentDataServiceImpl implements IEffluentDataService
     @Override
     public PlantEffluentResponseDTO getLatestByPlant(Integer plantId) {
         return effluentRepo.getLatestByPlant(plantId);
+    }
+
+    @Override
+    public EffluentDayDataDTO getDayData(Integer plantId, LocalDate date, LocalTime fromTime, LocalTime toTime) {
+        return effluentRepo.getDayData(plantId,date,fromTime,toTime);
+    }
+
+    @Override
+    public List<EffluentDailyAverageDTO> getDateRangeAverage(Integer plantId, LocalDate fromDate, LocalDate toDate) {
+        return effluentRepo.getDateRangeAverage(plantId,fromDate,toDate);
     }
 
     private boolean isZero(BigDecimal val)

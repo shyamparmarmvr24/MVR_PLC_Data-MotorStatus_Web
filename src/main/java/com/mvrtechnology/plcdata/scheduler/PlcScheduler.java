@@ -19,7 +19,7 @@ public class PlcScheduler
     private PlcConnectionService connectionService;
 
     @Autowired
-    private ISolarAndEnergyDataRepoImpl solarAndEnergyRepo;
+    private ISolarAndEnergyDataService solarAndEnergyRepo;
 
     @Autowired
     private IEffluentDataService effluentRepo;
@@ -32,7 +32,7 @@ public class PlcScheduler
                     new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy()
             );
 
-    @Scheduled(fixedRate = 300000)
+    @Scheduled(fixedDelay = 300000)
     public void fetchAllPlantsData()
     {
         List<PlantDetails> plants = plantRepo.findAll();
@@ -54,11 +54,10 @@ public class PlcScheduler
         {
             connection = connectionService.getConnection(plant.getPlcIp(), plant.getPlcPort());
             solarAndEnergyRepo.fetchAndSaveSolarAndEnergy(plant,connection);
-            effluentRepo.fetchAndSaveEffluentData(plant,connection);
         }
         catch (Exception e)
         {
-            System.out.println("PLC FAILED : " + plant.getPlantName() +" "+e.getMessage());
+            //System.out.println("PLC FAILED : " + plant.getPlantName() +" "+e.getMessage());
         }
         finally
         {
@@ -85,10 +84,10 @@ public class PlcScheduler
             catch (Exception e)
             {
                 attempts++;
-                System.out.println("Retry " + attempts + " for " + plant.getPlantName());
+                //System.out.println("Retry " + attempts + " for " + plant.getPlantName());
             }
         }
 
-        System.out.println("Fail To Fetch Data : " + plant.getPlantName());
+        //System.out.println("Fail To Fetch Data : " + plant.getPlantName());
     }
 }

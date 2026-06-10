@@ -7,7 +7,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Effluent_Data")
+@Table(name = "Effluent_Data",
+        indexes = {
+                @Index(name = "IDX_EFFLUENT_LATEST",
+                        columnList = "Plant_Id,Date_And_Time_Of_Effluent")
+        }
+)
 @Getter
 @Setter
 @AllArgsConstructor

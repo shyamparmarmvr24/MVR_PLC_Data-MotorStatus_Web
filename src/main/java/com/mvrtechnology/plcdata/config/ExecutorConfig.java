@@ -9,6 +9,6 @@ public class ExecutorConfig {
 
     @Bean
     public ExecutorService motorExecutor() {
-        return Executors.newFixedThreadPool(20);
+        return Executors.newFixedThreadPool(50);
     }
 }

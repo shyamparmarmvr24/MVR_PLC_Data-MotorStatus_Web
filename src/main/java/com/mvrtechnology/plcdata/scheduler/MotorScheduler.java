@@ -1,6 +1,7 @@
 package com.mvrtechnology.plcdata.scheduler;
 import com.mvrtechnology.plcdata.cache.MotorStatusCache;
 import com.mvrtechnology.plcdata.cache.PlantCache;
+import com.mvrtechnology.plcdata.dtos.AllPlantStatusDTO;
 import com.mvrtechnology.plcdata.dtos.MotorStatusDTO;
 import com.mvrtechnology.plcdata.dtos.PlantInfoDto;
 import com.mvrtechnology.plcdata.dtos.PlantMotorResponseDTO;
@@ -12,6 +13,9 @@ import com.mvrtechnology.plcdata.sse.SseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 @Component
@@ -31,67 +35,119 @@ public class MotorScheduler
     @Autowired
     private SseService sseService;
 
+    private final ConcurrentHashMap<Integer, Boolean> plantRunning =
+            new ConcurrentHashMap<>();
 
-    @Scheduled(fixedDelay = 1500)
+    private final ConcurrentHashMap<Integer, PlantInfoDto>
+            plantInfoCache =
+            new ConcurrentHashMap<>();
+
+
+    @Scheduled(fixedRate = 1000)
     public void run()
     {
-
-        for (PlantDetails plant : plantCache.getAll()) {
-
-            executor.submit(() -> {
-
-                try {
-                    TCPMasterConnection conn = pool.getConnection(plant.getPlcIp(), plant.getPlcPort());
-
-                    MotorStatusDTO data = service.fetchMotorStatus(conn);
-
-                    cache.update(plant.getPlantId(), data);
-                    PlantMotorResponseDTO response = new PlantMotorResponseDTO();
-
-                    response.setPlantId(plant.getPlantId());
-                    response.setPlantName(plant.getPlantName());
-                    response.setZone(plant.getZone());
-                    response.setMotorStatus(data);
-
-                    sseService.send(plant.getPlantId(), response);
-
-                    PlantInfoDto dto = new PlantInfoDto();
-                    dto.setPlantId(plant.getPlantId());
-                    dto.setPlantName(plant.getPlantName());
-                    dto.setZone(plant.getZone());
-                    dto.setPlcStatusSM400(data.getSm400());
-
-                    sseService.sendPlantInfoUpdate(dto);
-
-                }
-                catch (Exception e)
+        for (PlantDetails plant : plantCache.getAll())
+        {
+            if (plantRunning.putIfAbsent(
+                    plant.getPlantId(),
+                    true) == null)
+            {
+                executor.submit(() ->
                 {
-                    System.out.println("Motor FAIL: " + plant.getPlantName()+" "+e.getMessage());
-
-                    // GET LAST KNOWN VALUE
-                    MotorStatusDTO lastData = cache.get(plant.getPlantId());
-
-                    PlantInfoDto dto = new PlantInfoDto();
-                    dto.setPlantId(plant.getPlantId());
-                    dto.setPlantName(plant.getPlantName());
-                    dto.setZone(plant.getZone());
-
-                    if (lastData != null)
+                    try
                     {
-                        dto.setPlcStatusSM400(lastData.getSm400());
+                        processPlant(plant);
                     }
-                    else
+                    finally
                     {
-                        dto.setPlcStatusSM400(null);
+                        plantRunning.remove(
+                                plant.getPlantId());
                     }
+                });
+            }
+        }
+    }
 
-                    sseService.sendPlantInfoUpdate(dto);
-                }
-                finally
-                {
-                    pool.close();
-                }
-            });
+    @Scheduled(fixedRate = 1000)
+    public void publishAllPlantStatus()
+    {
+        if (plantInfoCache.isEmpty())
+        {
+            return;
+        }
+
+        AllPlantStatusDTO response =
+                new AllPlantStatusDTO();
+
+        response.setPlants(
+                new ArrayList<>(
+                        plantInfoCache.values()));
+
+        sseService.sendPlantInfoUpdate(response);
+    }
+
+    private void processPlant(PlantDetails plant)
+    {
+        try
+        {
+            TCPMasterConnection conn =
+                    pool.getConnection(
+                            plant.getPlantId(),
+                            plant.getPlcIp(),
+                            plant.getPlcPort());
+
+            synchronized (pool.getLock(plant.getPlantId()))
+            {
+                MotorStatusDTO data =
+                        service.fetchMotorStatus(conn);
+
+                cache.update(plant.getPlantId(), data);
+
+                PlantMotorResponseDTO response =
+                        new PlantMotorResponseDTO();
+
+                response.setPlantId(plant.getPlantId());
+                response.setPlantName(plant.getPlantName());
+                response.setZone(plant.getZone());
+                response.setMotorStatus(data);
+
+                sseService.send(
+                        plant.getPlantId(),
+                        response);
+
+                PlantInfoDto dto =
+                        new PlantInfoDto();
+
+                dto.setPlantId(plant.getPlantId());
+                dto.setPlantName(plant.getPlantName());
+                dto.setZone(plant.getZone());
+                dto.setPlcStatusSM400(data.getSm400());
+
+                plantInfoCache.put(
+                        plant.getPlantId(),
+                        dto);
+            }
+        }
+        catch (Exception e)
+        {
+            MotorStatusDTO lastData =
+                    cache.get(plant.getPlantId());
+
+            PlantInfoDto dto =
+                    new PlantInfoDto();
+
+            dto.setPlantId(plant.getPlantId());
+            dto.setPlantName(plant.getPlantName());
+            dto.setZone(plant.getZone());
+
+            dto.setPlcStatusSM400(
+                    lastData != null
+                            ? lastData.getSm400()
+                            : false);
+
+            plantInfoCache.put(
+                    plant.getPlantId(),
+                    dto);
         }
     }
 }

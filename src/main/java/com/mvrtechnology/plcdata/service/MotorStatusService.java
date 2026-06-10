@@ -79,20 +79,29 @@ public class MotorStatusService
             dto.setEmg(ModbusReader.readCoil(connection, 1001));
             dto.setSm400(ModbusReader.readCoil(connection, 20881));
 
-//            temperature
-            dto.setHotWaterOutlet(ModbusReader.readWord(connection,40504)*0.1);
-            dto.setHotWaterInlet(ModbusReader.readWord(connection,40503)*0.1);
-            dto.setExhaustChimney(ModbusReader.readWord(connection,40502)*0.1);
-            dto.setPyrolyzerMiddle(ModbusReader.readWord(connection,40501)*0.1);
-            dto.setPyrolyzerBottom(ModbusReader.readWord(connection,40500)*0.1);
-            dto.setScreenChamberLevel(ModbusReader.readWord(connection,40602)*1.0);
+            //temperature
+//            dto.setHotWaterOutlet(ModbusReader.readWord(connection,40504)*0.1);
+//            dto.setHotWaterInlet(ModbusReader.readWord(connection,40503)*0.1);
+//            dto.setExhaustChimney(ModbusReader.readWord(connection,40502)*0.1);
+//            dto.setPyrolyzerMiddle(ModbusReader.readWord(connection,40501)*0.1);
+//            dto.setPyrolyzerBottom(ModbusReader.readWord(connection,40500)*0.1);
+//            dto.setScreenChamberLevel(ModbusReader.readWord(connection,40602)*1.0);
+
+            int[] temp = ModbusReader.readWords(connection, 40500, 5);
+
+            dto.setPyrolyzerBottom(temp[0] * 0.1);
+            dto.setPyrolyzerMiddle(temp[1] * 0.1);
+            dto.setExhaustChimney(temp[2] * 0.1);
+            dto.setHotWaterInlet(temp[3] * 0.1);
+            dto.setHotWaterOutlet(temp[4] * 0.1);
+
+            dto.setScreenChamberLevel(ModbusReader.readWord(connection, 40602)*1.0);
 
         }
         catch (Exception e)
         {
-            throw new RuntimeException("PLC Read Failed : " + e.getMessage());
+            //throw new RuntimeException("PLC Read Failed : " + e.getMessage());
         }
-
         return dto;
     }
 }

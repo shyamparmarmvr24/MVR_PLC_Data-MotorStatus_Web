@@ -16,10 +16,35 @@ public class ModbusReader
         transaction.setRequest(request);
         transaction.execute();
 
-        ReadMultipleRegistersResponse response =
-                (ReadMultipleRegistersResponse) transaction.getResponse();
+        ReadMultipleRegistersResponse response = (ReadMultipleRegistersResponse) transaction.getResponse();
 
         return response.getRegisterValue(0);
+    }
+
+    public static int[] readWords(TCPMasterConnection connection, int startAddress, int count) throws Exception
+    {
+        int offset = startAddress - 40000;
+
+        ReadMultipleRegistersRequest request = new ReadMultipleRegistersRequest(offset, count);
+
+        request.setUnitID(0);
+
+        ModbusTCPTransaction transaction = new ModbusTCPTransaction(connection);
+
+        transaction.setRequest(request);
+
+        transaction.execute();
+
+        ReadMultipleRegistersResponse response = (ReadMultipleRegistersResponse) transaction.getResponse();
+
+        int[] result = new int[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            result[i] = response.getRegisterValue(i);
+        }
+
+        return result;
     }
 
     public static int readSignedInt16(TCPMasterConnection connection, int address) throws Exception
@@ -45,8 +70,7 @@ public class ModbusReader
         transaction.setRequest(request);
         transaction.execute();
 
-        ReadMultipleRegistersResponse response =
-                (ReadMultipleRegistersResponse) transaction.getResponse();
+        ReadMultipleRegistersResponse response = (ReadMultipleRegistersResponse) transaction.getResponse();
 
         int high = response.getRegisterValue(0);
         int low = response.getRegisterValue(1);
@@ -86,7 +110,8 @@ public class ModbusReader
 
         boolean[] result = new boolean[count];
 
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < count; i++)
+        {
             result[i] = response.getCoilStatus(i);
         }
 

@@ -1,6 +1,7 @@
 package com.mvrtechnology.plcdata.controller;
 import com.mvrtechnology.plcdata.dtos.PlantInfoDto;
 import com.mvrtechnology.plcdata.service.PlantInfoService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -9,12 +10,8 @@ import java.util.List;
 @CrossOrigin(origins="*")
 public class PlantInfoController
 {
-
-    private final PlantInfoService service;
-
-    public PlantInfoController(PlantInfoService service) {
-        this.service = service;
-    }
+    @Autowired
+    private PlantInfoService service;
 
     @GetMapping
     public List<PlantInfoDto> getAllPlants() {

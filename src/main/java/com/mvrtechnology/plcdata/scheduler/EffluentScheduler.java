@@ -18,20 +18,23 @@ public class EffluentScheduler
     @Autowired
     private SseService sseService;
 
-    @Scheduled(fixedRate = 360000)
+    @Scheduled(fixedDelay = 45000)
     public void push()
     {
-
         for (PlantDetails plant : plantCache.getAll())
         {
             try
             {
                 PlantEffluentResponseDTO latest = service.getLatestByPlant(plant.getPlantId());
-                sseService.sendEffluent(plant.getPlantId(), latest);
+
+                if(latest != null)
+                {
+                    sseService.sendEffluent(plant.getPlantId(), latest);
+                }
             }
             catch (Exception e)
             {
-                System.out.println("EFFLUENT FAIL: " + plant.getPlantName());
+                // log if required
             }
         }
     }
