@@ -5,12 +5,12 @@ import com.mvrtechnology.plcdata.dtos.LiveEffluentDTO;
 import com.mvrtechnology.plcdata.entity.PlantDetails;
 import com.mvrtechnology.plcdata.service.LiveEffluentService;
 import com.mvrtechnology.plcdata.service.PlcConnectionPool;
-import com.mvrtechnology.plcdata.service.PlcConnectionService;
 import com.mvrtechnology.plcdata.sse.LiveEffluentSseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 @Component
@@ -31,7 +31,9 @@ public class LiveEffluentScheduler
     @Autowired
     private ExecutorService motorExecutor;
 
-    @Scheduled(fixedRate = 1000)
+    private final ConcurrentHashMap<Integer,Boolean> plantRunning = new ConcurrentHashMap<>();
+
+    @Scheduled(fixedDelay = 1000)
     public void pushLiveData()
     {
         if(sseService.getSubscribedPlants().isEmpty())
@@ -41,8 +43,23 @@ public class LiveEffluentScheduler
 
         for(Integer plantId : sseService.getSubscribedPlants())
         {
-            motorExecutor.submit(() ->
-                    processPlant(plantId));
+            if(plantRunning.putIfAbsent(
+                    plantId,
+                    true) == null)
+            {
+                motorExecutor.submit(() ->
+                {
+                    try
+                    {
+                        processPlant(plantId);
+                    }
+                    finally
+                    {
+                        plantRunning.remove(
+                                plantId);
+                    }
+                });
+            }
         }
     }
 

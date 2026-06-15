@@ -3,6 +3,7 @@ import com.mvrtechnology.plcdata.entity.PlantDetails;
 import com.mvrtechnology.plcdata.repository.IPlantDetailsRepo;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,11 +21,27 @@ public class PlantCache
         refresh();
     }
 
-    public void refresh() {
-        cache.clear();
-        repo.findAll().forEach(p -> cache.put(p.getPlantId(), p));
+    @Scheduled(fixedDelay = 300000)
+    public void autoRefresh()
+    {
+        refresh();
     }
 
+    public void refresh()
+    {
+        ConcurrentHashMap<Integer,PlantDetails>
+                temp =
+                new ConcurrentHashMap<>();
+
+        repo.findAll().forEach(
+                p -> temp.put(
+                        p.getPlantId(),
+                        p));
+
+        cache.clear();
+
+        cache.putAll(temp);
+    }
     public Collection<PlantDetails> getAll() {
         return cache.values();
     }

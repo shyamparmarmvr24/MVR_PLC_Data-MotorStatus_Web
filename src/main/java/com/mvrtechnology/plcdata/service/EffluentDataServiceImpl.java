@@ -7,6 +7,7 @@ import com.mvrtechnology.plcdata.repository.IEffluentDataRepo;
 import com.mvrtechnology.plcdata.repository.IEffluentDataRepoImpl;
 import com.mvrtechnology.plcdata.util.ModbusReader;
 import com.ghgande.j2mod.modbus.net.TCPMasterConnection;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
+@Slf4j
 @Service
 public class EffluentDataServiceImpl implements IEffluentDataService
 {
@@ -62,6 +64,11 @@ public class EffluentDataServiceImpl implements IEffluentDataService
         }
         catch (Exception e)
         {
+//            log.error(
+//                    "Effluent read failed for plant {}",
+//                    plant.getPlantId(),
+//                    e);
+
             return null;
         }
     }

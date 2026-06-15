@@ -13,14 +13,12 @@ import com.mvrtechnology.plcdata.sse.SseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 @Component
-public class MotorScheduler
-{
+public class MotorScheduler {
 
     @Autowired
     private PlantCache plantCache;
@@ -35,22 +33,19 @@ public class MotorScheduler
     @Autowired
     private SseService sseService;
 
-    private final ConcurrentHashMap<Integer, Boolean> plantRunning =
-            new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, Boolean> plantRunning = new ConcurrentHashMap<>();
 
-    private final ConcurrentHashMap<Integer, PlantInfoDto>
-            plantInfoCache =
-            new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, PlantInfoDto> plantInfoCache = new ConcurrentHashMap<>();
 
+    private final ConcurrentHashMap<Integer, Integer> failureCounts = new ConcurrentHashMap<>();
 
-    @Scheduled(fixedRate = 1000)
+    private final ConcurrentHashMap<Integer, Boolean> plcOnlineStatus = new ConcurrentHashMap<>();
+
+    @Scheduled(fixedDelay = 1000)
     public void run()
     {
-        for (PlantDetails plant : plantCache.getAll())
-        {
-            if (plantRunning.putIfAbsent(
-                    plant.getPlantId(),
-                    true) == null)
+        for (PlantDetails plant : plantCache.getAll()) {
+            if (plantRunning.putIfAbsent(plant.getPlantId(), true) == null)
             {
                 executor.submit(() ->
                 {
@@ -60,15 +55,14 @@ public class MotorScheduler
                     }
                     finally
                     {
-                        plantRunning.remove(
-                                plant.getPlantId());
+                        plantRunning.remove(plant.getPlantId());
                     }
                 });
             }
         }
     }
 
-    @Scheduled(fixedRate = 1000)
+    @Scheduled(fixedDelay = 1000)
     public void publishAllPlantStatus()
     {
         if (plantInfoCache.isEmpty())
@@ -76,12 +70,9 @@ public class MotorScheduler
             return;
         }
 
-        AllPlantStatusDTO response =
-                new AllPlantStatusDTO();
+        AllPlantStatusDTO response = new AllPlantStatusDTO();
 
-        response.setPlants(
-                new ArrayList<>(
-                        plantInfoCache.values()));
+        response.setPlants(new ArrayList<>(plantInfoCache.values()));
 
         sseService.sendPlantInfoUpdate(response);
     }
@@ -90,64 +81,60 @@ public class MotorScheduler
     {
         try
         {
-            TCPMasterConnection conn =
-                    pool.getConnection(
-                            plant.getPlantId(),
-                            plant.getPlcIp(),
-                            plant.getPlcPort());
+            TCPMasterConnection conn = pool.getConnection(plant.getPlantId(), plant.getPlcIp(), plant.getPlcPort());
 
             synchronized (pool.getLock(plant.getPlantId()))
             {
-                MotorStatusDTO data =
-                        service.fetchMotorStatus(conn);
+                MotorStatusDTO data = service.fetchMotorStatus(conn);
+
+                failureCounts.put(plant.getPlantId(), 0);
+
+                plcOnlineStatus.put(plant.getPlantId(), true);
 
                 cache.update(plant.getPlantId(), data);
 
-                PlantMotorResponseDTO response =
-                        new PlantMotorResponseDTO();
+                PlantMotorResponseDTO response = new PlantMotorResponseDTO();
 
                 response.setPlantId(plant.getPlantId());
                 response.setPlantName(plant.getPlantName());
                 response.setZone(plant.getZone());
                 response.setMotorStatus(data);
 
-                sseService.send(
-                        plant.getPlantId(),
-                        response);
+                sseService.send(plant.getPlantId(), response);
 
-                PlantInfoDto dto =
-                        new PlantInfoDto();
+                PlantInfoDto dto = new PlantInfoDto();
 
                 dto.setPlantId(plant.getPlantId());
                 dto.setPlantName(plant.getPlantName());
                 dto.setZone(plant.getZone());
-                dto.setPlcStatusSM400(data.getSm400());
+//                dto.setPlcStatusSM400(data.getSm400());
+                dto.setPlcStatusSM400(plcOnlineStatus.getOrDefault(plant.getPlantId(), false));
 
-                plantInfoCache.put(
-                        plant.getPlantId(),
-                        dto);
+                plantInfoCache.put(plant.getPlantId(), dto);
             }
         }
         catch (Exception e)
         {
-            MotorStatusDTO lastData =
-                    cache.get(plant.getPlantId());
+            pool.close(plant.getPlantId());
 
-            PlantInfoDto dto =
-                    new PlantInfoDto();
+            int failures = failureCounts.merge(plant.getPlantId(), 1, Integer::sum);
+
+            if(failures >= 3)
+            {
+                plcOnlineStatus.put(plant.getPlantId(), false);
+            }
+
+            PlantInfoDto dto = new PlantInfoDto();
 
             dto.setPlantId(plant.getPlantId());
+
             dto.setPlantName(plant.getPlantName());
+
             dto.setZone(plant.getZone());
 
-            dto.setPlcStatusSM400(
-                    lastData != null
-                            ? lastData.getSm400()
-                            : false);
+            dto.setPlcStatusSM400(plcOnlineStatus.getOrDefault(plant.getPlantId(), false));
 
-            plantInfoCache.put(
-                    plant.getPlantId(),
-                    dto);
+            plantInfoCache.put(plant.getPlantId(), dto);
         }
     }
 }

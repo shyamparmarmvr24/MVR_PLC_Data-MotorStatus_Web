@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
 @Component
@@ -31,7 +32,9 @@ public class LiveSolarScheduler
     @Autowired
     private ExecutorService motorExecutor;
 
-    @Scheduled(fixedRate = 1000)
+    private final ConcurrentHashMap<Integer,Boolean> plantRunning = new ConcurrentHashMap<>();
+
+    @Scheduled(fixedDelay = 1000)
     public void pushLiveData()
     {
         if(sseService.getSubscribedPlants().isEmpty())
@@ -41,15 +44,26 @@ public class LiveSolarScheduler
 
         for(Integer plantId : sseService.getSubscribedPlants())
         {
-            motorExecutor.submit(() ->
-                    processPlant(plantId));
+            if(plantRunning.putIfAbsent(plantId, true) == null)
+            {
+                motorExecutor.submit(() ->
+                {
+                    try
+                    {
+                        processPlant(plantId);
+                    }
+                    finally
+                    {
+                        plantRunning.remove(plantId);
+                    }
+                });
+            }
         }
     }
 
     private void processPlant(Integer plantId)
     {
-        PlantDetails plant =
-                plantCache.get(plantId);
+        PlantDetails plant = plantCache.get(plantId);
 
         if(plant == null)
         {
@@ -58,24 +72,13 @@ public class LiveSolarScheduler
 
         try
         {
-            TCPMasterConnection connection =
-                    plcConnectionPool.getConnection(
-                            plantId,
-                            plant.getPlcIp(),
-                            plant.getPlcPort());
+            TCPMasterConnection connection = plcConnectionPool.getConnection(plantId, plant.getPlcIp(), plant.getPlcPort());
 
-            synchronized (
-                    plcConnectionPool.getLock(
-                            plantId))
+            synchronized (plcConnectionPool.getLock(plantId))
             {
-                LiveSolarDTO dto =
-                        liveSolarService.readLiveData(
-                                plant,
-                                connection);
+                LiveSolarDTO dto = liveSolarService.readLiveData(plant, connection);
 
-                sseService.send(
-                        plantId,
-                        dto);
+                sseService.send(plantId, dto);
             }
         }
         catch(Exception ex)

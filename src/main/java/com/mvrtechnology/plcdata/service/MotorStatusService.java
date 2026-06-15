@@ -100,7 +100,7 @@ public class MotorStatusService
         }
         catch (Exception e)
         {
-            //throw new RuntimeException("PLC Read Failed : " + e.getMessage());
+            throw new RuntimeException(e);
         }
         return dto;
     }

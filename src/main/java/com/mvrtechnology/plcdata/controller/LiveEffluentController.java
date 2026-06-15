@@ -26,8 +26,9 @@ public class LiveEffluentController
                             .name("connected")
                             .data("connected"));
         }
-        catch (Exception ignored)
+        catch(Exception ex)
         {
+            emitter.complete();
         }
 
         return emitter;

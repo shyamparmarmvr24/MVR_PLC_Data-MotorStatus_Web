@@ -5,27 +5,24 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 public class LiveEffluentSseService
 {
-    private final ConcurrentHashMap<Integer,SseEmitter> emitters =
-            new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, CopyOnWriteArrayList<SseEmitter>> emitters = new ConcurrentHashMap<>();
 
     public SseEmitter subscribe(Integer plantId)
     {
         SseEmitter emitter = new SseEmitter(0L);
 
-        emitters.put(plantId, emitter);
+        emitters.computeIfAbsent(plantId, k -> new CopyOnWriteArrayList<>()).add(emitter);
 
-        emitter.onCompletion(() ->
-                emitters.remove(plantId));
+        emitter.onCompletion(() -> removeEmitter(plantId, emitter));
 
-        emitter.onTimeout(() ->
-                emitters.remove(plantId));
+        emitter.onTimeout(() -> removeEmitter(plantId, emitter));
 
-        emitter.onError(ex ->
-                emitters.remove(plantId));
+        emitter.onError(ex -> removeEmitter(plantId, emitter));
 
         return emitter;
     }
@@ -40,46 +37,80 @@ public class LiveEffluentSseService
         return emitters.containsKey(plantId);
     }
 
-    public void send(Integer plantId,Object data)
+    public void send(
+            Integer plantId,
+            Object data)
     {
-        SseEmitter emitter = emitters.get(plantId);
+        CopyOnWriteArrayList<SseEmitter>
+                list =
+                emitters.get(plantId);
 
-        if(emitter == null)
+        if(list == null)
         {
             return;
         }
 
-        try
-        {
-            emitter.send(
-                    SseEmitter.event()
-                            .name("live-effluent")
-                            .data(data)
-            );
-        }
-        catch (IOException e)
-        {
-            emitter.complete();
-            emitters.remove(plantId);
-        }
-    }
-    @Scheduled(fixedRate = 15000)
-    public void heartbeat()
-    {
-        emitters.forEach((plantId, emitter) ->
+        for(SseEmitter emitter : list)
         {
             try
             {
                 emitter.send(
                         SseEmitter.event()
-                                .name("heartbeat")
-                                .data("ping"));
+                                .name("live-effluent")
+                                .data(data));
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 emitter.complete();
-                emitters.remove(plantId);
+                removeEmitter(
+                        plantId,
+                        emitter);
+            }
+        }
+    }
+
+    @Scheduled(fixedRate = 15000)
+    public void heartbeat()
+    {
+        emitters.forEach((plantId, list) ->
+        {
+            for(SseEmitter emitter : list)
+            {
+                try
+                {
+                    emitter.send(
+                            SseEmitter.event()
+                                    .name("heartbeat")
+                                    .data("ping"));
+                }
+                catch(Exception ex)
+                {
+                    emitter.complete();
+
+                    removeEmitter(
+                            plantId,
+                            emitter);
+                }
             }
         });
+    }
+
+    private void removeEmitter(
+            Integer plantId,
+            SseEmitter emitter)
+    {
+        CopyOnWriteArrayList<SseEmitter>
+                list =
+                emitters.get(plantId);
+
+        if(list != null)
+        {
+            list.remove(emitter);
+
+            if(list.isEmpty())
+            {
+                emitters.remove(plantId);
+            }
+        }
     }
 }

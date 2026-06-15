@@ -1,4 +1,5 @@
 package com.mvrtechnology.plcdata.scheduler;
+import com.mvrtechnology.plcdata.cache.PlantCache;
 import com.mvrtechnology.plcdata.dtos.PlantSolarResponseDTO;
 import com.mvrtechnology.plcdata.repository.IPlantDetailsRepo;
 import com.mvrtechnology.plcdata.service.ISolarAndEnergyDataService;
@@ -14,7 +15,7 @@ public class SolarSseScheduler
     private ISolarAndEnergyDataService solarService;
 
     @Autowired
-    private IPlantDetailsRepo plantRepo;
+    private PlantCache plantCache;
 
     @Autowired
     private SseService sseService;
@@ -22,7 +23,7 @@ public class SolarSseScheduler
     @Scheduled(cron = "30 */5 * * * *")
     public void pushSolarData()
     {
-        plantRepo.findAll().forEach(plant ->
+        plantCache.getAll().forEach(plant ->
         {
             try
             {

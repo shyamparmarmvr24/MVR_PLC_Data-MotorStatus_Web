@@ -14,4 +14,5 @@ public class EffluentDayDataDTO
     private LocalDateTime fromDateTime;
     private LocalDateTime toDateTime;
     private List<EffluentData> data;
+    private EffluentDaySummaryDTO summary;
 }

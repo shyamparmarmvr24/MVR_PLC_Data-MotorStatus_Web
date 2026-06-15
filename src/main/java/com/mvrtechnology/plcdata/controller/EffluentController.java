@@ -27,6 +27,10 @@ public class EffluentController
     public SseEmitter streamPlant(@PathVariable Integer plantId)
     {
         PlantEffluentResponseDTO initial = service.getLatestByPlant(plantId);
+        if(initial == null)
+        {
+            throw new RuntimeException("No Effluent Data Found");
+        }
         return sseService.subscribeEffluentPlant(plantId, initial);
     }
 

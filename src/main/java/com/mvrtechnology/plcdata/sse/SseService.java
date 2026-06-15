@@ -1,6 +1,5 @@
 package com.mvrtechnology.plcdata.sse;
 import com.mvrtechnology.plcdata.dtos.AllPlantStatusDTO;
-import com.mvrtechnology.plcdata.dtos.PlantInfoDto;
 import com.mvrtechnology.plcdata.dtos.PlantMotorResponseDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -78,6 +77,7 @@ public class SseService
             catch (Exception e)
             {
                 emitter.complete();
+                emitters.remove(emitter);
             }
         }
     }

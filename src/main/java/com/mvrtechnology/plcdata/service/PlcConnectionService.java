@@ -12,7 +12,7 @@ public class PlcConnectionService
 
         TCPMasterConnection connection = new TCPMasterConnection(address);
         connection.setPort(port);
-        connection.setTimeout(1500);
+        connection.setTimeout(500);
 
         connection.connect();
 

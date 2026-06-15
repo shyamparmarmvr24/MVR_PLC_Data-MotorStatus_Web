@@ -27,8 +27,16 @@ public class PlantInfoService {
             dto.setPlantId(plant.getPlantId());
             dto.setPlantName(plant.getPlantName());
             dto.setZone(plant.getZone());
+            dto.setDistrict(plant.getDistrict());
+            dto.setPlantKLD(plant.getPlantKLD());
+            dto.setIsMNITCompleted(plant.getIsMNITCompleted());
+            dto.setMnitCompletionDate(plant.getMnitCompletionDate());
+            dto.setIsSolarCompleted(plant.getIsSolarCompleted());
+            dto.setSolarCompletionDate(plant.getSolarCompletionDate());
+            dto.setLatitude(plant.getLatitude());
+            dto.setLongitude(plant.getLongitude());
 
-            Boolean sm400 = null;
+            Boolean sm400 = false;
 
             var motor = motorCache.get(plant.getPlantId());
 

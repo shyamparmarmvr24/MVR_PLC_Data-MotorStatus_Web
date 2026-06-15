@@ -3,12 +3,15 @@ import com.mvrtechnology.plcdata.entity.PlantDetails;
 import com.mvrtechnology.plcdata.repository.*;
 import com.mvrtechnology.plcdata.service.*;
 import com.ghgande.j2mod.modbus.net.TCPMasterConnection;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
+@Slf4j
 @Component
 public class PlcScheduler
 {
@@ -24,13 +27,10 @@ public class PlcScheduler
     @Autowired
     private IEffluentDataService effluentRepo;
 
-    private final ExecutorService executor =
-            new java.util.concurrent.ThreadPoolExecutor(
-                    20, 20,
-                    0L, java.util.concurrent.TimeUnit.MILLISECONDS,
-                    new java.util.concurrent.ArrayBlockingQueue<>(200),
-                    new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy()
-            );
+    @Autowired
+    private ExecutorService executor;
+
+    private final ConcurrentHashMap<Integer, Boolean> solarOfflinePlants = new ConcurrentHashMap<>();
 
     @Scheduled(fixedDelay = 300000)
     public void fetchAllPlantsData()
@@ -54,10 +54,23 @@ public class PlcScheduler
         {
             connection = connectionService.getConnection(plant.getPlcIp(), plant.getPlcPort());
             solarAndEnergyRepo.fetchAndSaveSolarAndEnergy(plant,connection);
+            if(solarOfflinePlants.remove(plant.getPlantId()) != null)
+            {
+                log.info(
+                        "SOLAR PLC ONLINE : {} - {}",
+                        plant.getPlantId(),
+                        plant.getPlantName());
+            }
         }
         catch (Exception e)
         {
-            //System.out.println("PLC FAILED : " + plant.getPlantName() +" "+e.getMessage());
+            if(solarOfflinePlants.putIfAbsent(plant.getPlantId(), true) == null)
+            {
+                log.warn(
+                        "SOLAR PLC OFFLINE : {} - {}",
+                        plant.getPlantId(),
+                        plant.getPlantName());
+            }
         }
         finally
         {
@@ -84,10 +97,7 @@ public class PlcScheduler
             catch (Exception e)
             {
                 attempts++;
-                //System.out.println("Retry " + attempts + " for " + plant.getPlantName());
             }
         }
-
-        //System.out.println("Fail To Fetch Data : " + plant.getPlantName());
     }
 }

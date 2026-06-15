@@ -7,8 +7,6 @@ import com.mvrtechnology.plcdata.service.PlcConnectionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
 import java.util.concurrent.*;
 
 @Component
@@ -23,7 +21,7 @@ public class EffluentFetchScheduler
     @Autowired
     private IEffluentDataService effluentService;
 
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    private final ExecutorService executor = Executors.newFixedThreadPool(50);
 
     private volatile boolean running = false;
 
@@ -63,7 +61,6 @@ public class EffluentFetchScheduler
         }
         catch (Exception e)
         {
-            //System.out.println("EFFLUENT FETCH FAIL : " + plant.getPlantName() + " : " + e.getMessage());
         }
         finally
         {

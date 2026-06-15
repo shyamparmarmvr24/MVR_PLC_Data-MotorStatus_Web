@@ -12,7 +12,7 @@ public class SchedulerConfig
         ThreadPoolTaskScheduler scheduler =
                 new ThreadPoolTaskScheduler();
 
-        scheduler.setPoolSize(50);
+        scheduler.setPoolSize(30);
 
         scheduler.setThreadNamePrefix(
                 "scheduler-");

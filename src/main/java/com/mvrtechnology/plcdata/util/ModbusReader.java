@@ -18,6 +18,11 @@ public class ModbusReader
 
         ReadMultipleRegistersResponse response = (ReadMultipleRegistersResponse) transaction.getResponse();
 
+        if(response == null)
+        {
+            throw new RuntimeException("Null Modbus Response");
+        }
+
         return response.getRegisterValue(0);
     }
 
@@ -92,6 +97,11 @@ public class ModbusReader
         transaction.execute();
 
         ReadCoilsResponse response = (ReadCoilsResponse) transaction.getResponse();
+
+        if(response == null)
+        {
+            throw new RuntimeException("Null Modbus Response");
+        }
 
         return response.getCoilStatus(0);
     }

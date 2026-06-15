@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +37,30 @@ public class PlantDetails
 
     @Column(name = "PLC_Status")
     private Boolean plcStatus;
+
+    @Column(name = "PlantKLD")
+    private Integer plantKLD;
+
+    @Column(name = "District",length = 50)
+    private String district;
+
+    @Column(name = "IsMNITCompleted")
+    private Boolean isMNITCompleted;
+
+    @Column(name = "MnitCompletionDate")
+    private LocalDate mnitCompletionDate;
+
+    @Column(name = "IsSolarCompleted")
+    private Boolean isSolarCompleted;
+
+    @Column(name = "SolarCompletionDate")
+    private LocalDate solarCompletionDate;
+
+    @Column(precision = 12, scale = 8)
+    private BigDecimal latitude;
+
+    @Column(precision = 12, scale = 8)
+    private BigDecimal longitude;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

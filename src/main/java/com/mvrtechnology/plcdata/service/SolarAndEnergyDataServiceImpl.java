@@ -5,7 +5,6 @@ import com.mvrtechnology.plcdata.dtos.SolarAndEnergyDateRangeSummaryDTO;
 import com.mvrtechnology.plcdata.dtos.SolarDataResponseDTO;
 import com.mvrtechnology.plcdata.dtos.SolarDayWiseResponseDTO;
 import com.mvrtechnology.plcdata.entity.*;
-import com.mvrtechnology.plcdata.repository.IPlantDetailsRepo;
 import com.mvrtechnology.plcdata.repository.ISolarAndEnergyDataRepo;
 import com.mvrtechnology.plcdata.repository.ISolarAndEnergyDataRepoImpl;
 import com.mvrtechnology.plcdata.util.ModbusReader;
@@ -43,7 +42,7 @@ public class SolarAndEnergyDataServiceImpl implements ISolarAndEnergyDataService
 
             data.setDailyActProduction(round2(ModbusReader.readWord(connection,41200)*0.1));
             data.setTotalPower(round2(ModbusReader.readWord(connection,41261)*0.1));
-            data.setInputPower(round2(ModbusReader.readWord(connection,41222)*0.1));
+            data.setInputPower(round2((ModbusReader.readWord(connection,41222)*0.1)/1000));
 
             data.setInverterDcCurrent(round2(ModbusReader.readWord(connection,41241)*0.1));
             data.setInverterDcVoltage(round2(ModbusReader.readWord(connection,41240)*0.1));

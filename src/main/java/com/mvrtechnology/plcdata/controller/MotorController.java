@@ -28,6 +28,12 @@ public class MotorController
 
         PlantDetails plant = plantCache.get(plantId);
 
+        if(plant == null)
+        {
+            throw new RuntimeException(
+                    "Plant Not Found : " + plantId);
+        }
+
         PlantMotorResponseDTO response = new PlantMotorResponseDTO();
 
         response.setPlantId(plant.getPlantId());
