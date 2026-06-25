@@ -48,10 +48,12 @@ public class EffluentDataServiceImpl implements IEffluentDataService
             data.setVelocity(round2(ModbusReader.readFloat(connection,42042)));
             data.setCumulativeFlow(round2(ModbusReader.readFloat(connection,45004)));
 
-            data.setFilterFeedPumpStatus(ModbusReader.readCoil(connection, 8507+1));
+            data.setFilterFeedPumpStatus(ModbusReader.readCoil(connection, 8405));
 
             data.setDateAndTimeOfEffluent(LocalDateTime.now());
             data.setOperationDate(LocalDate.now());
+
+            //System.out.println("Filter Feed "+data.getFilterFeedPumpStatus()+"  Flow "+data.getFlow() + "Plant Id "+data.getPlantDetails().getPlantId());
 
             if (Boolean.TRUE.equals(data.getFilterFeedPumpStatus()))
             {

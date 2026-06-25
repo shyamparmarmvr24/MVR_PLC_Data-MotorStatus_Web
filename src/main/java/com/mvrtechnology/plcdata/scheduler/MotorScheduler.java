@@ -9,6 +9,7 @@ import com.mvrtechnology.plcdata.entity.PlantDetails;
 import com.mvrtechnology.plcdata.service.MotorStatusService;
 import com.mvrtechnology.plcdata.service.PlcConnectionPool;
 import com.ghgande.j2mod.modbus.net.TCPMasterConnection;
+import com.mvrtechnology.plcdata.service.PlcStatusService;
 import com.mvrtechnology.plcdata.sse.SseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,6 +33,8 @@ public class MotorScheduler {
     private ExecutorService executor;
     @Autowired
     private SseService sseService;
+    @Autowired
+    private PlcStatusService plcStatusService;
 
     private final ConcurrentHashMap<Integer, Boolean> plantRunning = new ConcurrentHashMap<>();
 
@@ -89,7 +92,7 @@ public class MotorScheduler {
 
                 failureCounts.put(plant.getPlantId(), 0);
 
-                plcOnlineStatus.put(plant.getPlantId(), true);
+                plcStatusService.updateStatus(plant.getPlantId(), true);
 
                 cache.update(plant.getPlantId(), data);
 
@@ -98,6 +101,9 @@ public class MotorScheduler {
                 response.setPlantId(plant.getPlantId());
                 response.setPlantName(plant.getPlantName());
                 response.setZone(plant.getZone());
+
+                response.setPlcOnline(plcStatusService.isOnline(plant.getPlantId()));
+
                 response.setMotorStatus(data);
 
                 sseService.send(plant.getPlantId(), response);
@@ -107,8 +113,7 @@ public class MotorScheduler {
                 dto.setPlantId(plant.getPlantId());
                 dto.setPlantName(plant.getPlantName());
                 dto.setZone(plant.getZone());
-//                dto.setPlcStatusSM400(data.getSm400());
-                dto.setPlcStatusSM400(plcOnlineStatus.getOrDefault(plant.getPlantId(), false));
+                dto.setPlcStatusSM400(plcStatusService.isOnline(plant.getPlantId()));
 
                 plantInfoCache.put(plant.getPlantId(), dto);
             }
@@ -119,9 +124,11 @@ public class MotorScheduler {
 
             int failures = failureCounts.merge(plant.getPlantId(), 1, Integer::sum);
 
+            cache.remove(plant.getPlantId());
+
             if(failures >= 3)
             {
-                plcOnlineStatus.put(plant.getPlantId(), false);
+                plcStatusService.updateStatus(plant.getPlantId(), false);
             }
 
             PlantInfoDto dto = new PlantInfoDto();
@@ -132,7 +139,7 @@ public class MotorScheduler {
 
             dto.setZone(plant.getZone());
 
-            dto.setPlcStatusSM400(plcOnlineStatus.getOrDefault(plant.getPlantId(), false));
+            dto.setPlcStatusSM400(plcStatusService.isOnline(plant.getPlantId()));
 
             plantInfoCache.put(plant.getPlantId(), dto);
         }

@@ -29,7 +29,7 @@ public class LiveEffluentService
         dto.setVelocity(round2(ModbusReader.readFloat(connection,42042)));
         dto.setCumulativeFlow(round2(ModbusReader.readFloat(connection,45004)));
 
-        dto.setFilterFeedPumpStatus(ModbusReader.readCoil(connection,8507+1));
+        dto.setFilterFeedPumpStatus(ModbusReader.readCoil(connection,8406));
 
         dto.setTimeStamp(LocalDateTime.now());
 

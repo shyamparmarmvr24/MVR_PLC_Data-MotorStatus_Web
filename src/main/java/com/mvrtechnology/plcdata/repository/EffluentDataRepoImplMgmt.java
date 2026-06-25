@@ -74,6 +74,10 @@ public class EffluentDataRepoImplMgmt implements IEffluentDataRepoImpl
             {
                 record.setCumulativeFlow(record.getCumulativeFlow().multiply(BigDecimal.valueOf(1000)));
             }
+            if (record.getFlow() != null)
+            {
+                record.setFlow(record.getFlow().multiply(BigDecimal.valueOf(1000)));
+            }
         });
 
         EffluentDaySummaryDTO summary = new EffluentDaySummaryDTO();

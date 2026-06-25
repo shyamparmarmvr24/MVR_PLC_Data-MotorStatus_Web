@@ -4,6 +4,7 @@ import com.mvrtechnology.plcdata.cache.PlantCache;
 import com.mvrtechnology.plcdata.dtos.PlantMotorResponseDTO;
 import com.mvrtechnology.plcdata.entity.PlantDetails;
 import com.mvrtechnology.plcdata.repository.IPlantDetailsRepo;
+import com.mvrtechnology.plcdata.service.PlcStatusService;
 import com.mvrtechnology.plcdata.sse.SseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,8 @@ public class MotorController
     private SseService sseService;
     @Autowired
     private PlantCache plantCache;
+    @Autowired
+    private PlcStatusService plcStatusService;
 
     @GetMapping("/by-plant/{plantId}")
     public SseEmitter subscribe(@PathVariable Integer plantId) {
@@ -40,6 +43,10 @@ public class MotorController
         response.setPlantName(plant.getPlantName());
         response.setZone(plant.getZone());
         response.setMotorStatus(cache.get(plantId));
+
+        response.setPlcOnline(
+                plcStatusService.isOnline(
+                        plantId));
 
         return sseService.subscribe(plantId, response);
     }
