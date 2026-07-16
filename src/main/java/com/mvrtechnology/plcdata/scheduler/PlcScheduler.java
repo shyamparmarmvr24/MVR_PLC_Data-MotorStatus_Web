@@ -5,6 +5,7 @@ import com.mvrtechnology.plcdata.service.*;
 import com.ghgande.j2mod.modbus.net.TCPMasterConnection;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import java.util.List;
@@ -19,16 +20,20 @@ public class PlcScheduler
     private IPlantDetailsRepo plantRepo;
 
     @Autowired
-    private PlcConnectionService connectionService;
-
-    @Autowired
     private ISolarAndEnergyDataService solarAndEnergyRepo;
 
     @Autowired
     private IEffluentDataService effluentRepo;
 
     @Autowired
+    @Qualifier("solarPollExecutor")
     private ExecutorService executor;
+
+    @Autowired
+    private PlcConnectionPool connectionPool;
+
+    @Autowired
+    private PlcStatusService plcStatusService;
 
     private final ConcurrentHashMap<Integer, Boolean> solarOfflinePlants = new ConcurrentHashMap<>();
 
@@ -48,38 +53,31 @@ public class PlcScheduler
 
     private void processPlant(PlantDetails plant)
     {
-        TCPMasterConnection connection = null;
-
         try
         {
-            connection = connectionService.getConnection(plant.getPlcIp(), plant.getPlcPort());
-            solarAndEnergyRepo.fetchAndSaveSolarAndEnergy(plant,connection);
-            if(solarOfflinePlants.remove(plant.getPlantId()) != null)
+//            TCPMasterConnection connection =
+//                    connectionPool.getConnection(plant.getPlantId(), plant.getPlcIp(), plant.getPlcPort());
+
+            synchronized (connectionPool.getLock(plant.getPlantId()))
             {
-                log.info(
-                        "SOLAR PLC ONLINE : {} - {}",
-                        plant.getPlantId(),
-                        plant.getPlantName());
+                TCPMasterConnection connection =
+                        connectionPool.getConnection(plant.getPlantId(), plant.getPlcIp(), plant.getPlcPort());
+                solarAndEnergyRepo.fetchAndSaveSolarAndEnergy(plant, connection);
+            }
+
+            if (solarOfflinePlants.remove(plant.getPlantId()) != null)
+            {
+                log.info("SOLAR PLC ONLINE : {} - {}", plant.getPlantId(), plant.getPlantName());
             }
         }
         catch (Exception e)
         {
-            if(solarOfflinePlants.putIfAbsent(plant.getPlantId(), true) == null)
+            connectionPool.close(plant.getPlantId());
+
+            if (solarOfflinePlants.putIfAbsent(plant.getPlantId(), true) == null)
             {
-                log.warn(
-                        "SOLAR PLC OFFLINE : {} - {}",
-                        plant.getPlantId(),
-                        plant.getPlantName());
+                log.warn("SOLAR PLC OFFLINE : {} - {}", plant.getPlantId(), plant.getPlantName());
             }
-        }
-        finally
-        {
-            try
-            {
-                if (connection != null && connection.isConnected())
-                    connection.close();
-            }
-            catch (Exception ignored) {}
         }
     }
 

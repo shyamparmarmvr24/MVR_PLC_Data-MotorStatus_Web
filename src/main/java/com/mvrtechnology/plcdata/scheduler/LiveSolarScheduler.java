@@ -5,12 +5,11 @@ import com.mvrtechnology.plcdata.dtos.LiveSolarDTO;
 import com.mvrtechnology.plcdata.entity.PlantDetails;
 import com.mvrtechnology.plcdata.service.LiveSolarService;
 import com.mvrtechnology.plcdata.service.PlcConnectionPool;
-import com.mvrtechnology.plcdata.service.PlcConnectionService;
 import com.mvrtechnology.plcdata.sse.LiveSolarSseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
@@ -30,6 +29,7 @@ public class LiveSolarScheduler
     private PlcConnectionPool plcConnectionPool;
 
     @Autowired
+    @Qualifier("liveSolarExecutor")
     private ExecutorService motorExecutor;
 
     private final ConcurrentHashMap<Integer,Boolean> plantRunning = new ConcurrentHashMap<>();
@@ -72,10 +72,11 @@ public class LiveSolarScheduler
 
         try
         {
-            TCPMasterConnection connection = plcConnectionPool.getConnection(plantId, plant.getPlcIp(), plant.getPlcPort());
+//            TCPMasterConnection connection = plcConnectionPool.getConnection(plantId, plant.getPlcIp(), plant.getPlcPort());
 
             synchronized (plcConnectionPool.getLock(plantId))
             {
+                TCPMasterConnection connection = plcConnectionPool.getConnection(plantId, plant.getPlcIp(), plant.getPlcPort());
                 LiveSolarDTO dto = liveSolarService.readLiveData(plant, connection);
 
                 sseService.send(plantId, dto);

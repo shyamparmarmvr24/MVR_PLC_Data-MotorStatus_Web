@@ -1,7 +1,6 @@
 package com.mvrtechnology.plcdata.cache;
 import com.mvrtechnology.plcdata.dtos.MotorStatusDTO;
 import org.springframework.stereotype.Component;
-
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component

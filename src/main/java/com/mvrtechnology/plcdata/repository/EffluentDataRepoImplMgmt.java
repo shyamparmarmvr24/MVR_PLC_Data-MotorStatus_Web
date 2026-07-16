@@ -197,46 +197,9 @@ public class EffluentDataRepoImplMgmt implements IEffluentDataRepoImpl
         }
 
         return result;
-
-//        return rows.stream()
-//                .map(r -> {
-//
-//                    EffluentDailyAverageDTO dto = new EffluentDailyAverageDTO();
-//
-//                    dto.setPlantId(plant.getPlantId());
-//                    dto.setPlantName(plant.getPlantName());
-//                    dto.setZone(plant.getZone());
-//                    dto.setOperationDate(((Date)r[0]).toLocalDate());
-//
-//                    dto.setAvgPH((BigDecimal) r[1]);
-//                    dto.setAvgCod((BigDecimal) r[2]);
-//                    dto.setAvgBod((BigDecimal) r[3]);
-//                    dto.setAvgTss((BigDecimal) r[4]);
-//                    dto.setAvgTemperature((BigDecimal) r[5]);
-//                    dto.setAvgTN((BigDecimal) r[6]);
-//                    dto.setAvgFlow(((BigDecimal) r[7]).multiply(BigDecimal.valueOf(1000)));
-//                    dto.setAvgVelocity((BigDecimal) r[8]);
-//                    BigDecimal firstFlow = (BigDecimal) r[9];
-//                    BigDecimal lastFlow  = (BigDecimal) r[10];
-//
-//                    BigDecimal cumulativeFlow = BigDecimal.ZERO;
-//
-//                    if(firstFlow != null && lastFlow != null)
-//                    {
-//                        cumulativeFlow =
-//                                lastFlow.subtract(firstFlow)
-//                                        .multiply(BigDecimal.valueOf(1000));
-//                    }
-//
-//                    dto.setAvgCumulativeFlow(cumulativeFlow);
-//
-//                    return dto;
-//                }).toList();
     }
 
-    private EffluentDailyAverageDTO createEmptyDto(
-            PlantDetails plant,
-            LocalDate date)
+    private EffluentDailyAverageDTO createEmptyDto(PlantDetails plant, LocalDate date)
     {
         EffluentDailyAverageDTO dto =
                 new EffluentDailyAverageDTO();

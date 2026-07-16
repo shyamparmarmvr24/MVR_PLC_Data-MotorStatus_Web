@@ -79,14 +79,6 @@ public class MotorStatusService
             dto.setEmg(ModbusReader.readCoil(connection, 1001));
             dto.setSm400(ModbusReader.readCoil(connection, 20881));
 
-            //temperature
-//            dto.setHotWaterOutlet(ModbusReader.readWord(connection,40504)*0.1);
-//            dto.setHotWaterInlet(ModbusReader.readWord(connection,40503)*0.1);
-//            dto.setExhaustChimney(ModbusReader.readWord(connection,40502)*0.1);
-//            dto.setPyrolyzerMiddle(ModbusReader.readWord(connection,40501)*0.1);
-//            dto.setPyrolyzerBottom(ModbusReader.readWord(connection,40500)*0.1);
-//            dto.setScreenChamberLevel(ModbusReader.readWord(connection,40602)*1.0);
-
             int[] temp = ModbusReader.readWords(connection, 40500, 5);
 
             dto.setPyrolyzerBottom(temp[0] * 0.1);
@@ -103,5 +95,19 @@ public class MotorStatusService
             throw new RuntimeException(e);
         }
         return dto;
+    }
+
+    public boolean heartbeat(TCPMasterConnection connection)
+    {
+        try
+        {
+            ModbusReader.readCoil(connection, 20881);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            return false;
+        }
     }
 }

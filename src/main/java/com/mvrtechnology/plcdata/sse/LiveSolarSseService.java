@@ -54,7 +54,6 @@ public class LiveSolarSseService
             }
             catch(Exception ex)
             {
-                emitter.complete();
                 list.remove(emitter);
             }
         }
@@ -76,7 +75,6 @@ public class LiveSolarSseService
                 }
                 catch(Exception ex)
                 {
-                    emitter.complete();
                     removeEmitter(
                             plantId,
                             emitter);

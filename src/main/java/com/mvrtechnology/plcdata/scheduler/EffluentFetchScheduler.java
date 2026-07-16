@@ -3,7 +3,8 @@ import com.ghgande.j2mod.modbus.net.TCPMasterConnection;
 import com.mvrtechnology.plcdata.cache.PlantCache;
 import com.mvrtechnology.plcdata.entity.PlantDetails;
 import com.mvrtechnology.plcdata.service.IEffluentDataService;
-import com.mvrtechnology.plcdata.service.PlcConnectionService;
+import com.mvrtechnology.plcdata.service.PlcConnectionPool;
+import com.mvrtechnology.plcdata.service.PlcStatusService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -16,31 +17,27 @@ public class EffluentFetchScheduler
     private PlantCache plantCache;
 
     @Autowired
-    private PlcConnectionService connectionService;
+    private PlcConnectionPool connectionPool;
 
     @Autowired
     private IEffluentDataService effluentService;
 
-    private final ExecutorService executor = Executors.newFixedThreadPool(50);
+    @Autowired
+    private PlcStatusService plcStatusService;
 
+    private final ExecutorService executor = Executors.newFixedThreadPool(50);
     private volatile boolean running = false;
 
     @Scheduled(fixedDelay = 30000)
     public void fetchEffluentData()
     {
-        if(running)
-        {
-            return;
-        }
-
+        if (running) return;
         running = true;
-
         try
         {
-            for(PlantDetails plant : plantCache.getAll())
+            for (PlantDetails plant : plantCache.getAll())
             {
-                executor.submit(
-                        () -> processPlant(plant));
+                executor.submit(() -> processPlant(plant));
             }
         }
         finally
@@ -51,29 +48,21 @@ public class EffluentFetchScheduler
 
     private void processPlant(PlantDetails plant)
     {
-        TCPMasterConnection connection = null;
-
         try
         {
-            connection = connectionService.getConnection(plant.getPlcIp(), plant.getPlcPort());
+//            TCPMasterConnection connection =
+//                    connectionPool.getConnection(plant.getPlantId(), plant.getPlcIp(), plant.getPlcPort());
 
-            effluentService.fetchAndSaveEffluentData(plant, connection);
+            synchronized (connectionPool.getLock(plant.getPlantId()))
+            {
+                TCPMasterConnection connection =
+                        connectionPool.getConnection(plant.getPlantId(), plant.getPlcIp(), plant.getPlcPort());
+                effluentService.fetchAndSaveEffluentData(plant, connection);
+            }
         }
         catch (Exception e)
         {
-        }
-        finally
-        {
-            try
-            {
-                if(connection != null && connection.isConnected())
-                {
-                    connection.close();
-                }
-            }
-            catch (Exception ignored)
-            {
-            }
+            connectionPool.close(plant.getPlantId());
         }
     }
 }

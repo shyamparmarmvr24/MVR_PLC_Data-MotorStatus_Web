@@ -31,7 +31,7 @@ public class SseService
                 emitter.send(initialData);
             }
         } catch (Exception e) {
-            emitter.complete();
+//            emitter.complete();
         }
 
         return emitter;
@@ -39,9 +39,7 @@ public class SseService
 
     public void send(Integer plantId, Object data)
     {
-
         List<SseEmitter> emitters = clients.get(plantId);
-
         if (emitters == null) return;
 
         for (SseEmitter emitter : emitters)
@@ -52,7 +50,6 @@ public class SseService
             }
             catch (Exception e)
             {
-                emitter.complete();
                 removeClient(plantId, emitter);
             }
         }
@@ -63,21 +60,30 @@ public class SseService
         if (list != null) list.remove(emitter);
     }
 
-    public void sendPlantInfoUpdate(AllPlantStatusDTO data) {
+    public void sendPlantInfoUpdate(AllPlantStatusDTO data)
+    {
+        List<SseEmitter> emitters =
+                clients.get(0);
 
-        List<SseEmitter> emitters = clients.get(0);
+        if(emitters == null || emitters.isEmpty())
+        {
+            return;
+        }
 
-        if (emitters == null) return;
-
-        for (SseEmitter emitter : emitters) {
+        for(SseEmitter emitter : emitters)
+        {
             try
             {
-                emitter.send(SseEmitter.event().name("plant-status-update").data(data));
+                emitter.send(
+                        SseEmitter.event()
+                                .name("plant-status-update")
+                                .data(data));
             }
-            catch (Exception e)
+            catch(Exception ex)
             {
-                emitter.complete();
-                emitters.remove(emitter);
+                removeClient(
+                        0,
+                        emitter);
             }
         }
     }
@@ -99,7 +105,7 @@ public class SseService
         }
         catch (Exception e)
         {
-            emitter.complete();
+
         }
 
         return emitter;
@@ -118,7 +124,6 @@ public class SseService
             }
             catch (Exception e)
             {
-                emitter.complete();
                 removeEffluentClient(plantId, emitter);
             }
         }
@@ -149,7 +154,7 @@ public class SseService
             }
             catch (Exception e)
             {
-                emitter.complete();removeSolarClient(plantId, emitter);
+                removeSolarClient(plantId, emitter);
             }
         }
     }
@@ -178,7 +183,7 @@ public class SseService
         }
         catch (Exception e)
         {
-            emitter.complete();
+
         }
 
         return emitter;

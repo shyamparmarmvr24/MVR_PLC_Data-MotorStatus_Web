@@ -61,7 +61,6 @@ public class LiveEffluentSseService
             }
             catch(Exception ex)
             {
-                emitter.complete();
                 removeEmitter(
                         plantId,
                         emitter);
@@ -85,7 +84,6 @@ public class LiveEffluentSseService
                 }
                 catch(Exception ex)
                 {
-                    emitter.complete();
 
                     removeEmitter(
                             plantId,

@@ -10,7 +10,12 @@ import java.time.LocalDateTime;
 @Table(name = "Effluent_Data",
         indexes = {
                 @Index(name = "IDX_EFFLUENT_LATEST",
-                        columnList = "Plant_Id,Date_And_Time_Of_Effluent")
+                        columnList = "Plant_Id,Date_And_Time_Of_Effluent"),
+
+                @Index(
+                        name = "IDX_EFFLUENT_PLANT_DATE_TIME",
+                        columnList = "Plant_Id,Operation_Date,Date_And_Time_Of_Effluent"
+                )
         }
 )
 @Getter

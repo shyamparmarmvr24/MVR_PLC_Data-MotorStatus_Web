@@ -15,6 +15,8 @@ public class PlantInfoService {
     private PlantCache plantCache;
     @Autowired
     private MotorStatusCache motorCache;
+    @Autowired
+    private PlcStatusService plcStatusService;
 
     public List<PlantInfoDto> getAllPlants() {
 
@@ -36,15 +38,9 @@ public class PlantInfoService {
             dto.setLatitude(plant.getLatitude());
             dto.setLongitude(plant.getLongitude());
 
-            Boolean sm400 = false;
-
-            var motor = motorCache.get(plant.getPlantId());
-
-            if (motor != null) {
-                sm400 = motor.getSm400();
-            }
-
-            dto.setPlcStatusSM400(sm400);
+            dto.setPlcStatusSM400(
+                    plcStatusService.isOnline(
+                            plant.getPlantId()));
 
             response.add(dto);
         }

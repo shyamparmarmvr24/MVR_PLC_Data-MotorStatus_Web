@@ -26,31 +26,6 @@ public interface IEffluentDataRepo extends JpaRepository<EffluentData,Long>
     """)
     List<EffluentData> getDataBetweenTime(Integer plantId, LocalDateTime fromDateTime, LocalDateTime toDateTime);
 
-//    @Query(value = """
-//    SELECT
-//        Operation_Date as operationDate,
-//
-//        AVG(PH) as avgPH,
-//        AVG(COD) as avgCod,
-//        AVG(BOD) as avgBod,
-//        AVG(TSS) as avgTss,
-//        AVG(Temperature) as avgTemperature,
-//        AVG(TN) as avgTN,
-//        AVG(Flow) as avgFlow,
-//        AVG(Velocity) as avgVelocity,
-//        AVG(Cumulative_Flow) as avgCumulativeFlow
-//
-//    FROM Effluent_Data
-//
-//    WHERE Plant_Id = :plantId
-//    AND Operation_Date BETWEEN :fromDate AND :toDate
-//
-//    GROUP BY Operation_Date
-//
-//    ORDER BY Operation_Date
-//    """, nativeQuery = true)
-//    List<Object[]> getDateRangeAverage(Integer plantId, LocalDate fromDate, LocalDate toDate);
-
     @Query(value = """
     SELECT
         e.Operation_Date,

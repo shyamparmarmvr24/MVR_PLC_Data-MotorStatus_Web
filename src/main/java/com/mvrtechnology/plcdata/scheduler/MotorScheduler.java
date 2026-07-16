@@ -12,11 +12,13 @@ import com.ghgande.j2mod.modbus.net.TCPMasterConnection;
 import com.mvrtechnology.plcdata.service.PlcStatusService;
 import com.mvrtechnology.plcdata.sse.SseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 
 @Component
 public class MotorScheduler {
@@ -30,6 +32,7 @@ public class MotorScheduler {
     @Autowired
     private MotorStatusCache cache;
     @Autowired
+    @Qualifier("motorExecutor")
     private ExecutorService executor;
     @Autowired
     private SseService sseService;
@@ -40,27 +43,38 @@ public class MotorScheduler {
 
     private final ConcurrentHashMap<Integer, PlantInfoDto> plantInfoCache = new ConcurrentHashMap<>();
 
-    private final ConcurrentHashMap<Integer, Integer> failureCounts = new ConcurrentHashMap<>();
+//    private final ConcurrentHashMap<Integer, Integer> failureCounts = new ConcurrentHashMap<>();
+//
+//    private final ConcurrentHashMap<Integer, Boolean> plcOnlineStatus = new ConcurrentHashMap<>();
 
-    private final ConcurrentHashMap<Integer, Boolean> plcOnlineStatus = new ConcurrentHashMap<>();
+    //private final ConcurrentHashMap<Integer, Boolean> lastSentStatus = new ConcurrentHashMap<>();
+
 
     @Scheduled(fixedDelay = 1000)
     public void run()
     {
-        for (PlantDetails plant : plantCache.getAll()) {
+        for (PlantDetails plant : plantCache.getAll())
+        {
             if (plantRunning.putIfAbsent(plant.getPlantId(), true) == null)
             {
-                executor.submit(() ->
+                try
                 {
-                    try
+                    executor.submit(() ->
                     {
-                        processPlant(plant);
-                    }
-                    finally
-                    {
-                        plantRunning.remove(plant.getPlantId());
-                    }
-                });
+                        try
+                        {
+                            processPlant(plant);
+                        }
+                        finally
+                        {
+                            plantRunning.remove(plant.getPlantId());
+                        }
+                    });
+                }
+                catch (RejectedExecutionException rex)
+                {
+                    plantRunning.remove(plant.getPlantId());
+                }
             }
         }
     }
@@ -68,80 +82,166 @@ public class MotorScheduler {
     @Scheduled(fixedDelay = 1000)
     public void publishAllPlantStatus()
     {
-        if (plantInfoCache.isEmpty())
+        if(plantInfoCache.isEmpty())
         {
             return;
         }
 
-        AllPlantStatusDTO response = new AllPlantStatusDTO();
+        AllPlantStatusDTO dto =
+                new AllPlantStatusDTO();
 
-        response.setPlants(new ArrayList<>(plantInfoCache.values()));
+        dto.setPlants(
+                new ArrayList<>(plantInfoCache.values()));
 
-        sseService.sendPlantInfoUpdate(response);
+        sseService.sendPlantInfoUpdate(dto);
+
+        plantInfoCache.clear();
     }
 
     private void processPlant(PlantDetails plant)
     {
         try
         {
-            TCPMasterConnection conn = pool.getConnection(plant.getPlantId(), plant.getPlcIp(), plant.getPlcPort());
+//            TCPMasterConnection conn = pool.getConnection(plant.getPlantId(), plant.getPlcIp(), plant.getPlcPort());
 
             synchronized (pool.getLock(plant.getPlantId()))
             {
-                MotorStatusDTO data = service.fetchMotorStatus(conn);
+                TCPMasterConnection conn = pool.getConnection(plant.getPlantId(), plant.getPlcIp(), plant.getPlcPort());
+                boolean alive =
+                        service.heartbeat(conn);
 
-                failureCounts.put(plant.getPlantId(), 0);
+                if(!alive)
+                {
+                    pool.close(
+                            plant.getPlantId());
 
-                plcStatusService.updateStatus(plant.getPlantId(), true);
+                    plcStatusService.reportFailure(
+                            plant.getPlantId());
 
+                    return;
+                }
+
+                MotorStatusDTO data =
+                        service.fetchMotorStatus(conn);
+
+                boolean changed = plcStatusService.reportSuccess(plant.getPlantId());
                 cache.update(plant.getPlantId(), data);
 
                 PlantMotorResponseDTO response = new PlantMotorResponseDTO();
-
                 response.setPlantId(plant.getPlantId());
                 response.setPlantName(plant.getPlantName());
                 response.setZone(plant.getZone());
-
                 response.setPlcOnline(plcStatusService.isOnline(plant.getPlantId()));
-
                 response.setMotorStatus(data);
 
                 sseService.send(plant.getPlantId(), response);
 
-                PlantInfoDto dto = new PlantInfoDto();
+                if (changed)
+                {
+                    PlantInfoDto dto = new PlantInfoDto();
+                    dto.setPlantId(plant.getPlantId());
+                    dto.setPlantName(plant.getPlantName());
+                    dto.setZone(plant.getZone());
+                    dto.setPlcStatusSM400(true);
 
-                dto.setPlantId(plant.getPlantId());
-                dto.setPlantName(plant.getPlantName());
-                dto.setZone(plant.getZone());
-                dto.setPlcStatusSM400(plcStatusService.isOnline(plant.getPlantId()));
+                    plantInfoCache.put(plant.getPlantId(), dto);
+                }
 
-                plantInfoCache.put(plant.getPlantId(), dto);
+//                boolean changed =
+//                        plcStatusService.reportSuccess(
+//                                plant.getPlantId());
+//
+//                cache.update(plant.getPlantId(), data);
+//
+//                PlantMotorResponseDTO response = new PlantMotorResponseDTO();
+//                response.setPlantId(plant.getPlantId());
+//                response.setPlantName(plant.getPlantName());
+//                response.setZone(plant.getZone());
+//                response.setPlcOnline(plcStatusService.isOnline(plant.getPlantId()));
+//                response.setMotorStatus(data);
+//
+//                sseService.send(plant.getPlantId(), response);
+//
+//                boolean currentStatus =
+//                        plcStatusService.isOnline(plant.getPlantId());
+//
+//                Boolean previous =
+//                        lastSentStatus.get(plant.getPlantId());
+//
+//                if(previous == null || previous != currentStatus)
+//                {
+//                    lastSentStatus.put(
+//                            plant.getPlantId(),
+//                            currentStatus);
+//
+//                    PlantInfoDto dto =
+//                            new PlantInfoDto();
+//
+//                    dto.setPlantId(plant.getPlantId());
+//                    dto.setPlantName(plant.getPlantName());
+//                    dto.setZone(plant.getZone());
+//                    dto.setPlcStatusSM400(currentStatus);
+//
+//                    plantInfoCache.put(
+//                            plant.getPlantId(),
+//                            dto);
+//                }
             }
         }
-        catch (Exception e)
+        catch(Exception ex)
         {
-            pool.close(plant.getPlantId());
+//            try
+//            {
+//                Thread.sleep(100);
+//
+//                TCPMasterConnection retry =
+//                        pool.getConnection(
+//                                plant.getPlantId(),
+//                                plant.getPlcIp(),
+//                                plant.getPlcPort());
+//
+//                if(service.heartbeat(retry))
+//                {
+//                    return;
+//                }
+//            }
+//            catch(Exception ignored)
+//            {
+//
+//            }
 
-            int failures = failureCounts.merge(plant.getPlantId(), 1, Integer::sum);
+            pool.close(
+                    plant.getPlantId());
 
-            cache.remove(plant.getPlantId());
+            boolean changed =
+                    plcStatusService.reportFailure(
+                            plant.getPlantId());
 
-            if(failures >= 3)
+            cache.remove(
+                    plant.getPlantId());
+
+            if(changed)
             {
-                plcStatusService.updateStatus(plant.getPlantId(), false);
+                PlantInfoDto dto =
+                        new PlantInfoDto();
+
+                dto.setPlantId(
+                        plant.getPlantId());
+
+                dto.setPlantName(
+                        plant.getPlantName());
+
+                dto.setZone(
+                        plant.getZone());
+
+                dto.setPlcStatusSM400(
+                        false);
+
+                plantInfoCache.put(
+                        plant.getPlantId(),
+                        dto);
+
             }
-
-            PlantInfoDto dto = new PlantInfoDto();
-
-            dto.setPlantId(plant.getPlantId());
-
-            dto.setPlantName(plant.getPlantName());
-
-            dto.setZone(plant.getZone());
-
-            dto.setPlcStatusSM400(plcStatusService.isOnline(plant.getPlantId()));
-
-            plantInfoCache.put(plant.getPlantId(), dto);
         }
     }
 }

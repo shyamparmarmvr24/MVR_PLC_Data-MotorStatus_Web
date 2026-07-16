@@ -4,11 +4,13 @@ import com.mvrtechnology.plcdata.dtos.PlantEffluentResponseDTO;
 import com.mvrtechnology.plcdata.entity.PlantDetails;
 import com.mvrtechnology.plcdata.service.IEffluentDataService;
 import com.mvrtechnology.plcdata.sse.SseService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class EffluentScheduler
 {
     @Autowired
@@ -34,7 +36,7 @@ public class EffluentScheduler
             }
             catch (Exception e)
             {
-                // log if required
+                log.warn("Effluent Exception On Scheduler "+e);
             }
         }
     }

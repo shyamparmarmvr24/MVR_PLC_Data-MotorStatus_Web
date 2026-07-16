@@ -53,8 +53,6 @@ public class EffluentDataServiceImpl implements IEffluentDataService
             data.setDateAndTimeOfEffluent(LocalDateTime.now());
             data.setOperationDate(LocalDate.now());
 
-            //System.out.println("Filter Feed "+data.getFilterFeedPumpStatus()+"  Flow "+data.getFlow() + "Plant Id "+data.getPlantDetails().getPlantId());
-
             if (Boolean.TRUE.equals(data.getFilterFeedPumpStatus()))
             {
                 if (!isAllZero(data) && data.getFlow() != null && data.getFlow().compareTo(BigDecimal.valueOf(0.5)) >= 0)

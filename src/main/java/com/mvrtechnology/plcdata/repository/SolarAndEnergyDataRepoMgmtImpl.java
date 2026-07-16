@@ -5,7 +5,6 @@ import com.mvrtechnology.plcdata.dtos.SolarDataResponseDTO;
 import com.mvrtechnology.plcdata.dtos.SolarDayWiseResponseDTO;
 import com.mvrtechnology.plcdata.entity.PlantDetails;
 import com.mvrtechnology.plcdata.entity.SolarAndEnergyData;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
@@ -37,7 +36,12 @@ public class SolarAndEnergyDataRepoMgmtImpl implements ISolarAndEnergyDataRepoIm
 
         LocalDateTime toDateTime = LocalDateTime.of(date, toTime);
 
-        List<SolarAndEnergyData> history = solarAndEnergyRepo.getHistoryData(plantId, fromDateTime, toDateTime);
+        List<SolarDataResponseDTO> history =
+                solarAndEnergyRepo.getHistoryData(
+                        plantId,
+                        fromDateTime,
+                        toDateTime
+                );
 
         if(history == null || history.isEmpty())
         {
@@ -56,23 +60,17 @@ public class SolarAndEnergyDataRepoMgmtImpl implements ISolarAndEnergyDataRepoIm
             return response;
         }
 
-        List<SolarDataResponseDTO> dtoList = new ArrayList<>();
-
         BigDecimal previousActiveEnergy = null;
 
-        for (SolarAndEnergyData data : history)
+        for (SolarDataResponseDTO dto : history)
         {
-            SolarDataResponseDTO dto = new SolarDataResponseDTO();
+            dto.setActiveEnergyConsumption(
+                    calculateActiveEnergyConsumption(
+                            dto.getActiveEnergy(),
+                            previousActiveEnergy));
 
-            BeanUtils.copyProperties(data, dto);
-
-            BigDecimal currentActiveEnergy = data.getActiveEnergy();
-
-            dto.setActiveEnergyConsumption(calculateActiveEnergyConsumption(currentActiveEnergy, previousActiveEnergy));
-
-            previousActiveEnergy = currentActiveEnergy;
-
-            dtoList.add(dto);
+            previousActiveEnergy =
+                    dto.getActiveEnergy();
         }
 
         SolarDayWiseResponseDTO response = new SolarDayWiseResponseDTO();
@@ -84,7 +82,7 @@ public class SolarAndEnergyDataRepoMgmtImpl implements ISolarAndEnergyDataRepoIm
         response.setFromTime(fromTime);
         response.setToTime(toTime);
 
-        response.setData(dtoList);
+        response.setData(history);
 
         return response;
     }

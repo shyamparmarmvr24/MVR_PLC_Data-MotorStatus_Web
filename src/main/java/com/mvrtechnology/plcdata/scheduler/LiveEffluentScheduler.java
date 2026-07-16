@@ -7,9 +7,9 @@ import com.mvrtechnology.plcdata.service.LiveEffluentService;
 import com.mvrtechnology.plcdata.service.PlcConnectionPool;
 import com.mvrtechnology.plcdata.sse.LiveEffluentSseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
@@ -29,9 +29,13 @@ public class LiveEffluentScheduler
     private LiveEffluentSseService sseService;
 
     @Autowired
+    @Qualifier("liveEffluentExecutor")
     private ExecutorService motorExecutor;
 
     private final ConcurrentHashMap<Integer,Boolean> plantRunning = new ConcurrentHashMap<>();
+
+    @Autowired
+    private com.mvrtechnology.plcdata.service.PlcStatusService plcStatusService;
 
     @Scheduled(fixedDelay = 1000)
     public void pushLiveData()
@@ -40,65 +44,55 @@ public class LiveEffluentScheduler
         {
             return;
         }
-
         for(Integer plantId : sseService.getSubscribedPlants())
         {
-            if(plantRunning.putIfAbsent(
-                    plantId,
-                    true) == null)
+            if(plantRunning.putIfAbsent(plantId, true) == null)
             {
-                motorExecutor.submit(() ->
+                try
                 {
-                    try
+                    motorExecutor.submit(() ->
                     {
-                        processPlant(plantId);
-                    }
-                    finally
-                    {
-                        plantRunning.remove(
-                                plantId);
-                    }
-                });
+                        try
+                        {
+                            processPlant(plantId);
+                        }
+                        finally
+                        {
+                            plantRunning.remove(plantId);
+                        }
+                    });
+                }
+                catch (java.util.concurrent.RejectedExecutionException rex)
+                {
+                    plantRunning.remove(plantId);
+                }
             }
         }
     }
 
     private void processPlant(Integer plantId)
     {
-        PlantDetails plant =
-                plantCache.get(plantId);
-
+        PlantDetails plant = plantCache.get(plantId);
         if(plant == null)
         {
             return;
         }
-
         try
         {
-            TCPMasterConnection connection =
-                    plcConnectionPool.getConnection(
-                            plantId,
-                            plant.getPlcIp(),
-                            plant.getPlcPort());
+//            TCPMasterConnection connection =
+//                    plcConnectionPool.getConnection(plantId, plant.getPlcIp(), plant.getPlcPort());
 
-            synchronized (
-                    plcConnectionPool.getLock(
-                            plantId))
+            synchronized (plcConnectionPool.getLock(plantId))
             {
-                LiveEffluentDTO dto =
-                        liveService.readLiveData(
-                                plant,
-                                connection);
-
-                sseService.send(
-                        plantId,
-                        dto);
+                TCPMasterConnection connection =
+                        plcConnectionPool.getConnection(plantId, plant.getPlcIp(), plant.getPlcPort());
+                LiveEffluentDTO dto = liveService.readLiveData(plant, connection);
+                sseService.send(plantId, dto);
             }
         }
         catch (Exception ex)
         {
-            plcConnectionPool.close(
-                    plantId);
+            plcConnectionPool.close(plantId);
         }
     }
 }
