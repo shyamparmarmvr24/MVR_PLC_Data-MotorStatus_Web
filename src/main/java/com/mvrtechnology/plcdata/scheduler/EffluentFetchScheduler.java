@@ -50,9 +50,6 @@ public class EffluentFetchScheduler
     {
         try
         {
-//            TCPMasterConnection connection =
-//                    connectionPool.getConnection(plant.getPlantId(), plant.getPlcIp(), plant.getPlcPort());
-
             synchronized (connectionPool.getLock(plant.getPlantId()))
             {
                 TCPMasterConnection connection =

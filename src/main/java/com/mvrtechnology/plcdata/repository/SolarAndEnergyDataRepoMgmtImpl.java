@@ -3,8 +3,8 @@ import com.mvrtechnology.plcdata.cache.PlantCache;
 import com.mvrtechnology.plcdata.dtos.SolarAndEnergyDateRangeSummaryDTO;
 import com.mvrtechnology.plcdata.dtos.SolarDataResponseDTO;
 import com.mvrtechnology.plcdata.dtos.SolarDayWiseResponseDTO;
+import com.mvrtechnology.plcdata.dtos.SolarSummaryDataDTO;
 import com.mvrtechnology.plcdata.entity.PlantDetails;
-import com.mvrtechnology.plcdata.entity.SolarAndEnergyData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
@@ -90,17 +90,21 @@ public class SolarAndEnergyDataRepoMgmtImpl implements ISolarAndEnergyDataRepoIm
     @Override
     public List<SolarAndEnergyDateRangeSummaryDTO> getSolarSummary(Integer plantId, LocalDate fromDate, LocalDate toDate)
     {
-        List<SolarAndEnergyData> records = solarAndEnergyRepo.getSummaryData(plantId, fromDate, toDate);
+        List<SolarSummaryDataDTO> records =
+                solarAndEnergyRepo.getSummaryData(
+                        plantId,
+                        fromDate,
+                        toDate);
 
         if(records == null || records.isEmpty())
         {
             return null;
         }
 
-        Map<LocalDate,List<SolarAndEnergyData>> dayMap =
+        Map<LocalDate,List<SolarSummaryDataDTO>> dayMap =
                 records.stream()
                         .collect(Collectors.groupingBy(
-                                SolarAndEnergyData::getOperationDate,
+                                SolarSummaryDataDTO::getOperationDate,
                                 LinkedHashMap::new,
                                 Collectors.toList()));
 
@@ -111,7 +115,7 @@ public class SolarAndEnergyDataRepoMgmtImpl implements ISolarAndEnergyDataRepoIm
 
         while (!currentDate.isAfter(toDate))
         {
-            List<SolarAndEnergyData> dayRecords =
+            List<SolarSummaryDataDTO> dayRecords =
                     dayMap.get(currentDate);
 
             if(dayRecords == null || dayRecords.isEmpty())
@@ -133,15 +137,15 @@ public class SolarAndEnergyDataRepoMgmtImpl implements ISolarAndEnergyDataRepoIm
                 continue;
             }
 
-            SolarAndEnergyData first =
+            SolarSummaryDataDTO first =
                     dayRecords.get(0);
 
-            SolarAndEnergyData last =
+            SolarSummaryDataDTO last =
                     dayRecords.get(dayRecords.size()-1);
 
             BigDecimal production =
                     dayRecords.stream()
-                            .map(SolarAndEnergyData::getDailyActProduction)
+                            .map(SolarSummaryDataDTO::getDailyActProduction)
                             .filter(Objects::nonNull)
                             .max(BigDecimal::compareTo)
                             .orElse(BigDecimal.ZERO);
@@ -152,7 +156,7 @@ public class SolarAndEnergyDataRepoMgmtImpl implements ISolarAndEnergyDataRepoIm
             long min6Diff = Long.MAX_VALUE;
             long min18Diff = Long.MAX_VALUE;
 
-            for(SolarAndEnergyData record : dayRecords)
+            for(SolarSummaryDataDTO record : dayRecords)
             {
                 LocalTime time =
                         record.getDateAndTimeOfSolarAndEnergy()

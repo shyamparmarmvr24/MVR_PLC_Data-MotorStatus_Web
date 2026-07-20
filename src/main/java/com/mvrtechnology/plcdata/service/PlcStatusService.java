@@ -1,16 +1,12 @@
 package com.mvrtechnology.plcdata.service;
-
 import org.springframework.stereotype.Service;
-
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class PlcStatusService
 {
-    // ONLINE after 2 successful polls
     private static final int SUCCESS_THRESHOLD = 2;
 
-    // OFFLINE after 4 consecutive failures
     private static final int FAILURE_THRESHOLD = 4;
 
     private final ConcurrentHashMap<Integer,Integer> successCounter =

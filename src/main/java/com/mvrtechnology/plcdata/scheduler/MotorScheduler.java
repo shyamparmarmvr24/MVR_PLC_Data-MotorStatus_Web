@@ -43,13 +43,6 @@ public class MotorScheduler {
 
     private final ConcurrentHashMap<Integer, PlantInfoDto> plantInfoCache = new ConcurrentHashMap<>();
 
-//    private final ConcurrentHashMap<Integer, Integer> failureCounts = new ConcurrentHashMap<>();
-//
-//    private final ConcurrentHashMap<Integer, Boolean> plcOnlineStatus = new ConcurrentHashMap<>();
-
-    //private final ConcurrentHashMap<Integer, Boolean> lastSentStatus = new ConcurrentHashMap<>();
-
-
     @Scheduled(fixedDelay = 1000)
     public void run()
     {
@@ -102,8 +95,6 @@ public class MotorScheduler {
     {
         try
         {
-//            TCPMasterConnection conn = pool.getConnection(plant.getPlantId(), plant.getPlcIp(), plant.getPlcPort());
-
             synchronized (pool.getLock(plant.getPlantId()))
             {
                 TCPMasterConnection conn = pool.getConnection(plant.getPlantId(), plant.getPlcIp(), plant.getPlcPort());
@@ -121,8 +112,7 @@ public class MotorScheduler {
                     return;
                 }
 
-                MotorStatusDTO data =
-                        service.fetchMotorStatus(conn);
+                MotorStatusDTO data = service.fetchMotorStatus(conn);
 
                 boolean changed = plcStatusService.reportSuccess(plant.getPlantId());
                 cache.update(plant.getPlantId(), data);
@@ -146,70 +136,10 @@ public class MotorScheduler {
 
                     plantInfoCache.put(plant.getPlantId(), dto);
                 }
-
-//                boolean changed =
-//                        plcStatusService.reportSuccess(
-//                                plant.getPlantId());
-//
-//                cache.update(plant.getPlantId(), data);
-//
-//                PlantMotorResponseDTO response = new PlantMotorResponseDTO();
-//                response.setPlantId(plant.getPlantId());
-//                response.setPlantName(plant.getPlantName());
-//                response.setZone(plant.getZone());
-//                response.setPlcOnline(plcStatusService.isOnline(plant.getPlantId()));
-//                response.setMotorStatus(data);
-//
-//                sseService.send(plant.getPlantId(), response);
-//
-//                boolean currentStatus =
-//                        plcStatusService.isOnline(plant.getPlantId());
-//
-//                Boolean previous =
-//                        lastSentStatus.get(plant.getPlantId());
-//
-//                if(previous == null || previous != currentStatus)
-//                {
-//                    lastSentStatus.put(
-//                            plant.getPlantId(),
-//                            currentStatus);
-//
-//                    PlantInfoDto dto =
-//                            new PlantInfoDto();
-//
-//                    dto.setPlantId(plant.getPlantId());
-//                    dto.setPlantName(plant.getPlantName());
-//                    dto.setZone(plant.getZone());
-//                    dto.setPlcStatusSM400(currentStatus);
-//
-//                    plantInfoCache.put(
-//                            plant.getPlantId(),
-//                            dto);
-//                }
             }
         }
         catch(Exception ex)
         {
-//            try
-//            {
-//                Thread.sleep(100);
-//
-//                TCPMasterConnection retry =
-//                        pool.getConnection(
-//                                plant.getPlantId(),
-//                                plant.getPlcIp(),
-//                                plant.getPlcPort());
-//
-//                if(service.heartbeat(retry))
-//                {
-//                    return;
-//                }
-//            }
-//            catch(Exception ignored)
-//            {
-//
-//            }
-
             pool.close(
                     plant.getPlantId());
 

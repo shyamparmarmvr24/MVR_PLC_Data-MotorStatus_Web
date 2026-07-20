@@ -79,9 +79,6 @@ public class LiveEffluentScheduler
         }
         try
         {
-//            TCPMasterConnection connection =
-//                    plcConnectionPool.getConnection(plantId, plant.getPlcIp(), plant.getPlcPort());
-
             synchronized (plcConnectionPool.getLock(plantId))
             {
                 TCPMasterConnection connection =

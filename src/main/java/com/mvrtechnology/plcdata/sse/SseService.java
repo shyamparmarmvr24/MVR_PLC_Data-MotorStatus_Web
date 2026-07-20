@@ -1,6 +1,7 @@
 package com.mvrtechnology.plcdata.sse;
 import com.mvrtechnology.plcdata.dtos.AllPlantStatusDTO;
 import com.mvrtechnology.plcdata.dtos.PlantMotorResponseDTO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
+@Slf4j
 public class SseService
 {
     private final Map<Integer, List<SseEmitter>> clients = new ConcurrentHashMap<>();
@@ -30,8 +32,9 @@ public class SseService
             if (initialData != null) {
                 emitter.send(initialData);
             }
-        } catch (Exception e) {
-//            emitter.complete();
+        } catch (Exception e)
+        {
+            log.warn("Failed To Send Motor Status Plant Id {}",plantId);
         }
 
         return emitter;

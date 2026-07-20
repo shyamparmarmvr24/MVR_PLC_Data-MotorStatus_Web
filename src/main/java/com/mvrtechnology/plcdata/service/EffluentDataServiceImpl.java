@@ -64,11 +64,7 @@ public class EffluentDataServiceImpl implements IEffluentDataService
         }
         catch (Exception e)
         {
-//            log.error(
-//                    "Effluent read failed for plant {}",
-//                    plant.getPlantId(),
-//                    e);
-
+            log.warn("Effluent Fetch And Store Failed Plant Id : {}",plant.getPlantId());
             return null;
         }
     }

@@ -59,7 +59,6 @@ public class PlcConnectionPool
     {
         TCPMasterConnection connection = connections.remove(plantId);
         connectionOpenedAt.remove(plantId);
-        //locks.remove(plantId);
         if (connection != null)
         {
             try { connection.close(); } catch (Exception ignored) {}

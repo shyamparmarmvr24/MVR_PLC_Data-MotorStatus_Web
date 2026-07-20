@@ -1,5 +1,4 @@
 package com.mvrtechnology.plcdata.controller;
-
 import com.mvrtechnology.plcdata.sse.LiveSolarSseService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,25 +15,18 @@ public class LiveSolarController
     private LiveSolarSseService sseService;
 
     @GetMapping("/{plantId}")
-    public SseEmitter stream(
-            @PathVariable Integer plantId)
+    public SseEmitter stream(@PathVariable Integer plantId)
     {
-        SseEmitter emitter =
-                sseService.subscribe(plantId);
+        SseEmitter emitter = sseService.subscribe(plantId);
 
         try
         {
-            emitter.send(
-                    SseEmitter.event()
-                            .name("connected")
-                            .data("connected"));
+            emitter.send(SseEmitter.event().name("connected").data("connected"));
         }
         catch(Exception ex)
         {
-            //emitter.complete();
             log.warn("Live Solar Failed To Read "+ex);
         }
-
         return emitter;
     }
 }

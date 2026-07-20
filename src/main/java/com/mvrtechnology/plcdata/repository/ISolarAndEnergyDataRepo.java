@@ -1,5 +1,6 @@
 package com.mvrtechnology.plcdata.repository;
 import com.mvrtechnology.plcdata.dtos.SolarDataResponseDTO;
+import com.mvrtechnology.plcdata.dtos.SolarSummaryDataDTO;
 import com.mvrtechnology.plcdata.entity.SolarAndEnergyData;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -55,15 +56,28 @@ public interface ISolarAndEnergyDataRepo extends JpaRepository<SolarAndEnergyDat
     List<SolarDataResponseDTO> getHistoryData(Integer plantId, LocalDateTime fromDateTime, LocalDateTime toDateTime);
 
     @Query("""
-    SELECT s
+    SELECT new com.mvrtechnology.plcdata.dtos.SolarSummaryDataDTO(
+    
+    s.operationDate,
+    
+    s.dailyActProduction,
+    
+    s.activeEnergy,
+    
+    s.dateAndTimeOfSolarAndEnergy
+    
+    )
+    
     FROM SolarAndEnergyData s
-    WHERE s.plantDetails.plantId = :plantId
+    
+    WHERE s.plantDetails.plantId=:plantId
+    
     AND s.operationDate BETWEEN :fromDate AND :toDate
+    
     ORDER BY s.operationDate,
     s.dateAndTimeOfSolarAndEnergy
+    
     """)
-    List<SolarAndEnergyData> getSummaryData(Integer plantId, LocalDate fromDate, LocalDate toDate);
+    List<SolarSummaryDataDTO> getSummaryData(Integer plantId, LocalDate fromDate, LocalDate toDate);
 
 }
-
-//changes 16/07/26
