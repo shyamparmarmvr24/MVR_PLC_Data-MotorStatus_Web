@@ -1,7 +1,5 @@
 package com.mvrtechnology.plcdata.service;
-import com.mvrtechnology.plcdata.dtos.EffluentDailyAverageDTO;
-import com.mvrtechnology.plcdata.dtos.EffluentDayDataDTO;
-import com.mvrtechnology.plcdata.dtos.PlantEffluentResponseDTO;
+import com.mvrtechnology.plcdata.dtos.*;
 import com.mvrtechnology.plcdata.entity.*;
 import com.mvrtechnology.plcdata.repository.IEffluentDataRepo;
 import com.mvrtechnology.plcdata.repository.IEffluentDataRepoImpl;
@@ -55,7 +53,7 @@ public class EffluentDataServiceImpl implements IEffluentDataService
 
             if (Boolean.TRUE.equals(data.getFilterFeedPumpStatus()))
             {
-                if (!isAllZero(data) && data.getFlow() != null && data.getFlow().compareTo(BigDecimal.valueOf(0.5)) >= 0)
+                if (!isAllZero(data) && data.getFlow() != null && data.getFlow().compareTo(BigDecimal.valueOf(0.5)) >= 0 && !(isZero(data.getCod())))
                 {
                     return eRepo.save(data);
                 }
@@ -95,6 +93,16 @@ public class EffluentDataServiceImpl implements IEffluentDataService
     @Override
     public List<EffluentDailyAverageDTO> getDateRangeAverage(Integer plantId, LocalDate fromDate, LocalDate toDate) {
         return effluentRepo.getDateRangeAverage(plantId,fromDate,toDate);
+    }
+
+    @Override
+    public List<DateAvailabilityDTO> getMonthAvailability(Integer plantId, int year, int month) {
+        return effluentRepo.getMonthAvailability(plantId,year,month);
+    }
+
+    @Override
+    public List<EffluentCumulativeFlowDTO> getDayWiseCumulativeFlow(Integer plantId, LocalDate date, LocalTime fromTime, LocalTime toTime) {
+        return effluentRepo.getDayWiseCumulativeFlow(plantId,date,fromTime,toTime);
     }
 
     private boolean isZero(BigDecimal val)

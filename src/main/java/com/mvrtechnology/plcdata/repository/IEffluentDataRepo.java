@@ -57,13 +57,14 @@ public interface IEffluentDataRepo extends JpaRepository<EffluentData,Long>
     OUTER APPLY
     (
         SELECT TOP (1)
-            ed.Cumulative_Flow
+        ed.Cumulative_Flow
         FROM Effluent_Data ed
         WHERE ed.Plant_Id = e.Plant_Id
-          AND ed.Operation_Date = e.Operation_Date
-        ORDER BY ed.date_And_Time_Of_Effluent DESC
+        AND ed.Operation_Date = e.Operation_Date
+        AND ISNULL(ed.Cumulative_Flow, 0) <> 0
+        ORDER BY ed.Date_And_Time_Of_Effluent DESC
     ) lastRecord
-
+    
     WHERE e.Plant_Id = :plantId
       AND e.Operation_Date BETWEEN :fromDate AND :toDate
 
@@ -75,4 +76,54 @@ public interface IEffluentDataRepo extends JpaRepository<EffluentData,Long>
     ORDER BY e.Operation_Date
     """, nativeQuery = true)
     List<Object[]> getDateRangeAverage(Integer plantId, LocalDate fromDate, LocalDate toDate);
+
+
+    @Query("""
+    SELECT DISTINCT e.operationDate
+    FROM EffluentData e
+    WHERE e.plantDetails.plantId = :plantId
+    AND YEAR(e.operationDate) = :year
+    AND MONTH(e.operationDate) = :month
+    ORDER BY e.operationDate
+    """)
+    List<LocalDate> getAvailableDates(Integer plantId, int year, int month);
+
+    @Query(value = """
+    SELECT
+    
+    e.Date_And_Time_Of_Effluent,
+    
+    (
+    ISNULL(e.Cumulative_Flow,0)
+    
+    -
+    
+    ISNULL
+    (
+    (
+    SELECT TOP 1
+    ed.Cumulative_Flow
+    
+    FROM Effluent_Data ed
+    
+    WHERE ed.Plant_Id=e.Plant_Id
+    AND ed.Operation_Date=e.Operation_Date
+    
+    ORDER BY ed.Date_And_Time_Of_Effluent
+    )
+    ,0)
+    
+    ) AS CumulativeFlow
+    
+    FROM Effluent_Data e
+    
+    WHERE e.Plant_Id=:plantId
+    
+    AND e.Date_And_Time_Of_Effluent
+    BETWEEN :fromDateTime AND :toDateTime
+    
+    ORDER BY e.Date_And_Time_Of_Effluent
+    
+    """,nativeQuery=true)
+    List<Object[]> getDayWiseCumulativeFlow(Integer plantId, LocalDateTime fromDateTime, LocalDateTime toDateTime);
 }

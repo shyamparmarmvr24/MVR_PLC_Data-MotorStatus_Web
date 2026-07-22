@@ -1,9 +1,7 @@
 package com.mvrtechnology.plcdata.service;
 
 import com.ghgande.j2mod.modbus.net.TCPMasterConnection;
-import com.mvrtechnology.plcdata.dtos.EffluentDailyAverageDTO;
-import com.mvrtechnology.plcdata.dtos.EffluentDayDataDTO;
-import com.mvrtechnology.plcdata.dtos.PlantEffluentResponseDTO;
+import com.mvrtechnology.plcdata.dtos.*;
 import com.mvrtechnology.plcdata.entity.EffluentData;
 import com.mvrtechnology.plcdata.entity.PlantDetails;
 
@@ -18,4 +16,6 @@ public interface IEffluentDataService
     PlantEffluentResponseDTO getLatestByPlant(Integer plantId);
     EffluentDayDataDTO getDayData(Integer plantId, LocalDate date, LocalTime fromTime, LocalTime toTime);
     List<EffluentDailyAverageDTO> getDateRangeAverage(Integer plantId, LocalDate fromDate, LocalDate toDate);
+    List<DateAvailabilityDTO> getMonthAvailability(Integer plantId, int year, int month);
+    List<EffluentCumulativeFlowDTO> getDayWiseCumulativeFlow(Integer plantId, LocalDate date, LocalTime fromTime, LocalTime toTime);
 }

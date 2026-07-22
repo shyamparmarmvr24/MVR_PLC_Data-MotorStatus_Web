@@ -1,9 +1,6 @@
 package com.mvrtechnology.plcdata.repository;
 import com.mvrtechnology.plcdata.cache.PlantCache;
-import com.mvrtechnology.plcdata.dtos.EffluentDailyAverageDTO;
-import com.mvrtechnology.plcdata.dtos.EffluentDayDataDTO;
-import com.mvrtechnology.plcdata.dtos.EffluentDaySummaryDTO;
-import com.mvrtechnology.plcdata.dtos.PlantEffluentResponseDTO;
+import com.mvrtechnology.plcdata.dtos.*;
 import com.mvrtechnology.plcdata.entity.EffluentData;
 import com.mvrtechnology.plcdata.entity.PlantDetails;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +10,8 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.YearMonth;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
@@ -102,9 +98,20 @@ public class EffluentDataRepoImplMgmt implements IEffluentDataRepoImpl
 
             BigDecimal firstFlow = data.get(0).getCumulativeFlow();
 
-            BigDecimal lastFlow = data.get(data.size() - 1).getCumulativeFlow();
+            BigDecimal lastFlow = null;
 
-            if(firstFlow != null && lastFlow != null)
+            for (int i = data.size() - 1; i >= 0; i--)
+            {
+                BigDecimal flow = data.get(i).getCumulativeFlow();
+
+                if (flow != null && flow.compareTo(BigDecimal.ZERO) > 0)
+                {
+                    lastFlow = flow;
+                    break;
+                }
+            }
+
+            if (firstFlow != null && lastFlow != null)
             {
                 summary.setAvgCumulativeFlow(lastFlow.subtract(firstFlow));
             }
@@ -197,6 +204,94 @@ public class EffluentDataRepoImplMgmt implements IEffluentDataRepoImpl
         }
 
         return result;
+    }
+
+    @Override
+    public List<DateAvailabilityDTO> getMonthAvailability(Integer plantId,
+                                                          int year,
+                                                          int month)
+    {
+        List<LocalDate> availableDates =
+                effluentRepo.getAvailableDates(plantId, year, month);
+
+        Set<LocalDate> availableSet =
+                new HashSet<>(availableDates);
+
+        YearMonth selectedMonth = YearMonth.of(year, month);
+        LocalDate today = LocalDate.now();
+        YearMonth currentMonth = YearMonth.from(today);
+
+        if (selectedMonth.isAfter(currentMonth))
+        {
+            return new ArrayList<>();
+        }
+
+        int lastDay = selectedMonth.equals(currentMonth)
+                ? today.getDayOfMonth()
+                : selectedMonth.lengthOfMonth();
+
+        List<DateAvailabilityDTO> result = new ArrayList<>();
+
+        for (int day = 1; day <= lastDay; day++)
+        {
+            LocalDate date = selectedMonth.atDay(day);
+
+            result.add(new DateAvailabilityDTO(
+                    date,
+                    availableSet.contains(date)
+            ));
+        }
+
+        return result;
+    }
+
+    @Override
+    public List<EffluentCumulativeFlowDTO> getDayWiseCumulativeFlow(
+            Integer plantId,
+            LocalDate date,
+            LocalTime fromTime,
+            LocalTime toTime)
+    {
+
+        LocalDateTime fromDateTime =
+                LocalDateTime.of(date,fromTime);
+
+        LocalDateTime toDateTime =
+                LocalDateTime.of(date,toTime);
+
+        List<Object[]> rows =
+                effluentRepo.getDayWiseCumulativeFlow(
+                        plantId,
+                        fromDateTime,
+                        toDateTime);
+
+        List<EffluentCumulativeFlowDTO> result =
+                new ArrayList<>();
+
+        for(Object[] row:rows){
+
+            EffluentCumulativeFlowDTO dto =
+                    new EffluentCumulativeFlowDTO();
+
+            dto.setDateAndTime(
+                    ((java.sql.Timestamp)row[0]).toLocalDateTime());
+
+            BigDecimal flow=(BigDecimal)row[1];
+
+            if(flow!=null){
+
+                flow=flow.multiply(BigDecimal.valueOf(1000));
+
+            }
+
+            dto.setCumulativeFlow(flow);
+
+            result.add(dto);
+
+        }
+
+        return result;
+
     }
 
     private EffluentDailyAverageDTO createEmptyDto(PlantDetails plant, LocalDate date)
