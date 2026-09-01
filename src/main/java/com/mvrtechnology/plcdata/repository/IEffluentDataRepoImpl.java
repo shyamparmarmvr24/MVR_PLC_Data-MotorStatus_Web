@@ -12,4 +12,6 @@ public interface IEffluentDataRepoImpl
     List<EffluentDailyAverageDTO> getDateRangeAverage(Integer plantId, LocalDate fromDate, LocalDate toDate);
     List<DateAvailabilityDTO> getMonthAvailability(Integer plantId, int year, int month);
     List<EffluentCumulativeFlowDTO> getDayWiseCumulativeFlow(Integer plantId, LocalDate date, LocalTime fromTime, LocalTime toTime);
+    EffluentAverageDTO getAverageByPlantAndDate(Integer plantId, LocalDate operationDate);
+    List<AllPlantEffluentResponse> getAllPlantsAverageByDate(LocalDate operationDate);
 }

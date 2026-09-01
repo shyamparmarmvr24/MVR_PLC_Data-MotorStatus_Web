@@ -77,4 +77,23 @@ public class EffluentController
                 fromTime,
                 toTime);
     }
+
+    @GetMapping("/average/day")
+    public EffluentAverageDTO getAverageByPlantAndDate(
+
+            @RequestParam Integer plantId,
+            @RequestParam
+            @DateTimeFormat(pattern = "dd-MM-yyyy")
+            LocalDate operationDate)
+    {
+        return service.getAverageByPlantAndDate(
+                plantId,
+                operationDate);
+    }
+
+    @GetMapping("/average/day/all-plants")
+    public List<AllPlantEffluentResponse> getAllPlantsAverageByDate(@RequestParam @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate operationDate)
+    {
+        return service.getAllPlantsAverageByDate(operationDate);
+    }
 }

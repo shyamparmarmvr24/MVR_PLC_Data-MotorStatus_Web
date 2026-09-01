@@ -1,5 +1,7 @@
 package com.mvrtechnology.plcdata.repository;
 import com.mvrtechnology.plcdata.entity.EffluentData;
+import com.mvrtechnology.plcdata.projection.AllPlantEffluentProjection;
+import com.mvrtechnology.plcdata.projection.EffluentAverageProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import java.time.LocalDate;
@@ -91,39 +93,153 @@ public interface IEffluentDataRepo extends JpaRepository<EffluentData,Long>
     @Query(value = """
     SELECT
     
-    e.Date_And_Time_Of_Effluent,
+        e.Date_And_Time_Of_Effluent,
     
-    (
-    ISNULL(e.Cumulative_Flow,0)
+        (
+            e.Cumulative_Flow -
+            (
+                SELECT TOP 1 ed.Cumulative_Flow
+                FROM Effluent_Data ed
+                WHERE ed.Plant_Id = e.Plant_Id
+                  AND ed.Operation_Date = e.Operation_Date
+                  AND ed.Cumulative_Flow IS NOT NULL
+                  AND ed.Cumulative_Flow <> 0
+                ORDER BY ed.Date_And_Time_Of_Effluent
+            )
+        ) AS CumulativeFlow
     
-    -
+    FROM Effluent_Data e
     
-    ISNULL
-    (
-    (
-    SELECT TOP 1
-    ed.Cumulative_Flow
+    WHERE e.Plant_Id = :plantId
+      AND e.Date_And_Time_Of_Effluent BETWEEN :fromDateTime AND :toDateTime
+      AND e.Cumulative_Flow IS NOT NULL
+      AND e.Cumulative_Flow <> 0
     
-    FROM Effluent_Data ed
+    ORDER BY e.Date_And_Time_Of_Effluent
+    """, nativeQuery = true)
+    List<Object[]> getDayWiseCumulativeFlow(
+            Integer plantId,
+            LocalDateTime fromDateTime,
+            LocalDateTime toDateTime);
+
+    @Query(value = """
+    SELECT
     
-    WHERE ed.Plant_Id=e.Plant_Id
-    AND ed.Operation_Date=e.Operation_Date
+    ISNULL(AVG(e.PH),0)            AS avgPH,
+    ISNULL(AVG(e.COD),0)           AS avgCOD,
+    ISNULL(AVG(e.BOD),0)           AS avgBOD,
+    ISNULL(AVG(e.TSS),0)           AS avgTSS,
+    ISNULL(AVG(e.Temperature),0)   AS avgTemperature,
+    ISNULL(AVG(e.TN),0)            AS avgTN,
+    ISNULL(AVG(e.Flow),0)          AS avgFlow,
+    ISNULL(AVG(e.Velocity),0)      AS avgVelocity,
     
-    ORDER BY ed.Date_And_Time_Of_Effluent
-    )
-    ,0)
+    ISNULL(
+           (
+               ISNULL
+               (
+                  (
+                     SELECT TOP (1) ed.Cumulative_Flow
+                     FROM Effluent_Data ed
+                     WHERE ed.Plant_Id = :plantId
+                     AND ed.Operation_Date = :operationDate
+                     AND ed.Cumulative_Flow IS NOT NULL
+                     AND ed.Cumulative_Flow <> 0
+                     ORDER BY ed.Date_And_Time_Of_Effluent DESC
+                  ),0
+           )
     
-    ) AS CumulativeFlow
+           -
+    
+               ISNULL
+               (
+                   (
+                      SELECT TOP (1) ed.Cumulative_Flow
+                      FROM Effluent_Data ed
+                      WHERE ed.Plant_Id = :plantId
+                      AND ed.Operation_Date = :operationDate
+                      AND ed.Cumulative_Flow IS NOT NULL
+                      AND ed.Cumulative_Flow <> 0
+                      ORDER BY ed.Date_And_Time_Of_Effluent ASC
+                   ),0
+               )
+   
+           ),0) AS cumulativeFlow
     
     FROM Effluent_Data e
     
     WHERE e.Plant_Id=:plantId
+    AND e.Operation_Date=:operationDate
     
-    AND e.Date_And_Time_Of_Effluent
-    BETWEEN :fromDateTime AND :toDateTime
-    
-    ORDER BY e.Date_And_Time_Of_Effluent
-    
-    """,nativeQuery=true)
-    List<Object[]> getDayWiseCumulativeFlow(Integer plantId, LocalDateTime fromDateTime, LocalDateTime toDateTime);
+    """,nativeQuery = true)
+    EffluentAverageProjection getAverageByPlantAndDate(Integer plantId, LocalDate operationDate);
+
+
+    @Query(value = """
+    SELECT
+
+        e.Plant_Id AS plantId,
+
+        p.Plant_Name AS plantName,
+
+        ISNULL(AVG(e.PH), 0)            AS avgPH,
+        ISNULL(AVG(e.COD), 0)           AS avgCOD,
+        ISNULL(AVG(e.BOD), 0)           AS avgBOD,
+        ISNULL(AVG(e.TSS), 0)           AS avgTSS,
+        ISNULL(AVG(e.Temperature), 0)   AS avgTemperature,
+        ISNULL(AVG(e.TN), 0)            AS avgTN,
+        ISNULL(AVG(e.Flow), 0)          AS avgFlow,
+        ISNULL(AVG(e.Velocity), 0)      AS avgVelocity,
+
+        ISNULL(
+            (
+                ISNULL
+                (
+                    (
+                        SELECT TOP (1)
+                            ed.Cumulative_Flow
+                        FROM Effluent_Data ed
+                        WHERE ed.Plant_Id = e.Plant_Id
+                          AND ed.Operation_Date = :operationDate
+                          AND ed.Cumulative_Flow IS NOT NULL
+                          AND ed.Cumulative_Flow <> 0
+                        ORDER BY ed.Date_And_Time_Of_Effluent DESC
+                    ),
+                    0
+                )
+            )
+            -
+            ISNULL
+            (
+                (
+                    SELECT TOP (1)
+                        ed.Cumulative_Flow
+                    FROM Effluent_Data ed
+                    WHERE ed.Plant_Id = e.Plant_Id
+                      AND ed.Operation_Date = :operationDate
+                      AND ed.Cumulative_Flow IS NOT NULL
+                      AND ed.Cumulative_Flow <> 0
+                    ORDER BY ed.Date_And_Time_Of_Effluent ASC
+                ),
+                0
+            ),
+            0
+        ) AS cumulativeFlow
+
+    FROM Effluent_Data e
+
+    INNER JOIN Plant_Details p
+        ON p.Plant_Id = e.Plant_Id
+
+    WHERE e.Operation_Date = :operationDate
+
+    GROUP BY
+        e.Plant_Id,
+        p.Plant_Name
+
+    ORDER BY
+        e.Plant_Id
+
+    """, nativeQuery = true)
+    List<AllPlantEffluentProjection> getAllPlantsAverageByDate(LocalDate operationDate);
 }

@@ -10,8 +10,10 @@ import java.time.LocalDateTime;
 @Table(name = "SolarAndEnergyData",
         indexes = {
                 @Index(name = "idx_solar_plant_datetime",
-                        columnList = "Plant_Id,date_And_Time_Of_Solar_And_Energy")
-        }
+                        columnList = "Plant_Id,date_And_Time_Of_Solar_And_Energy"),
+                @Index(name = "idx_solar_plant_opdate",
+                        columnList = "Plant_Id,operation_Date")
+                }
 )
 @Getter
 @Setter

@@ -46,7 +46,7 @@ public class EffluentDataServiceImpl implements IEffluentDataService
             data.setVelocity(round2(ModbusReader.readFloat(connection,42042)));
             data.setCumulativeFlow(round2(ModbusReader.readFloat(connection,45004)));
 
-            data.setFilterFeedPumpStatus(ModbusReader.readCoil(connection, 8405));
+            data.setFilterFeedPumpStatus(ModbusReader.readCoil(connection, 8406));
 
             data.setDateAndTimeOfEffluent(LocalDateTime.now());
             data.setOperationDate(LocalDate.now());
@@ -103,6 +103,16 @@ public class EffluentDataServiceImpl implements IEffluentDataService
     @Override
     public List<EffluentCumulativeFlowDTO> getDayWiseCumulativeFlow(Integer plantId, LocalDate date, LocalTime fromTime, LocalTime toTime) {
         return effluentRepo.getDayWiseCumulativeFlow(plantId,date,fromTime,toTime);
+    }
+
+    @Override
+    public EffluentAverageDTO getAverageByPlantAndDate(Integer plantId, LocalDate operationDate) {
+        return effluentRepo.getAverageByPlantAndDate(plantId,operationDate);
+    }
+
+    @Override
+    public List<AllPlantEffluentResponse> getAllPlantsAverageByDate(LocalDate operationDate) {
+        return effluentRepo.getAllPlantsAverageByDate(operationDate);
     }
 
     private boolean isZero(BigDecimal val)

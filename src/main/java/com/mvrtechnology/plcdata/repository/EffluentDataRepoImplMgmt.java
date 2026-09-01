@@ -3,6 +3,8 @@ import com.mvrtechnology.plcdata.cache.PlantCache;
 import com.mvrtechnology.plcdata.dtos.*;
 import com.mvrtechnology.plcdata.entity.EffluentData;
 import com.mvrtechnology.plcdata.entity.PlantDetails;
+import com.mvrtechnology.plcdata.projection.AllPlantEffluentProjection;
+import com.mvrtechnology.plcdata.projection.EffluentAverageProjection;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
@@ -292,6 +294,105 @@ public class EffluentDataRepoImplMgmt implements IEffluentDataRepoImpl
 
         return result;
 
+    }
+
+    @Override
+    public EffluentAverageDTO getAverageByPlantAndDate(Integer plantId, LocalDate operationDate)
+    {
+
+        EffluentAverageProjection projection =
+                effluentRepo.getAverageByPlantAndDate(
+                        plantId,
+                        operationDate);
+
+        EffluentAverageDTO dto = new EffluentAverageDTO();
+
+        dto.setPlantId(plantId);
+        dto.setOperationDate(operationDate);
+
+        if(projection == null)
+        {
+            dto.setAvgPH(BigDecimal.ZERO);
+            dto.setAvgCod(BigDecimal.ZERO);
+            dto.setAvgBod(BigDecimal.ZERO);
+            dto.setAvgTss(BigDecimal.ZERO);
+            dto.setAvgTemperature(BigDecimal.ZERO);
+            dto.setAvgTN(BigDecimal.ZERO);
+            dto.setAvgFlow(BigDecimal.ZERO);
+            dto.setAvgVelocity(BigDecimal.ZERO);
+            dto.setCumulativeFlow(BigDecimal.ZERO);
+
+            return dto;
+        }
+
+        dto.setAvgPH(projection.getAvgPH());
+        dto.setAvgCod(projection.getAvgCOD());
+        dto.setAvgBod(projection.getAvgBOD());
+        dto.setAvgTss(projection.getAvgTSS());
+        dto.setAvgTemperature(projection.getAvgTemperature());
+        dto.setAvgTN(projection.getAvgTN());
+
+        dto.setAvgFlow(
+                projection.getAvgFlow().multiply(BigDecimal.valueOf(1000)));
+
+        dto.setAvgVelocity(
+                projection.getAvgVelocity());
+
+        dto.setCumulativeFlow(
+                projection.getCumulativeFlow().multiply(BigDecimal.valueOf(1000)));
+
+        return dto;
+    }
+
+    @Override
+    public List<AllPlantEffluentResponse> getAllPlantsAverageByDate(LocalDate operationDate)
+    {
+
+        List<AllPlantEffluentProjection> projections = effluentRepo.getAllPlantsAverageByDate(operationDate);
+
+        return projections.stream()
+                .map(projection -> {
+
+                    AllPlantEffluentResponse dto =
+                            new AllPlantEffluentResponse();
+
+                    dto.setPlantId(projection.getPlantId());
+
+                    dto.setPlantName(projection.getPlantName());
+
+                    dto.setAvgPH(projection.getAvgPH());
+
+                    dto.setAvgCOD(projection.getAvgCOD());
+
+                    dto.setAvgBOD(projection.getAvgBOD());
+
+                    dto.setAvgTSS(projection.getAvgTSS());
+
+                    dto.setAvgTemperature(
+                            projection.getAvgTemperature()
+                    );
+
+                    dto.setAvgTN(projection.getAvgTN());
+
+                    dto.setAvgFlow(
+                            projection.getAvgFlow() != null
+                                    ? projection.getAvgFlow() * 1000
+                                    : 0D
+                    );
+
+                    dto.setAvgVelocity(
+                            projection.getAvgVelocity()
+                    );
+
+
+                    dto.setCumulativeFlow(
+                            projection.getCumulativeFlow() != null
+                                    ? projection.getCumulativeFlow() * 1000
+                                    : 0D
+                    );
+
+                    return dto;
+                }).toList();
     }
 
     private EffluentDailyAverageDTO createEmptyDto(PlantDetails plant, LocalDate date)

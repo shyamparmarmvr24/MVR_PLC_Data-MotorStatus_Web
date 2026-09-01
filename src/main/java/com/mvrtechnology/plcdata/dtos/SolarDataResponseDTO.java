@@ -48,6 +48,8 @@ public class SolarDataResponseDTO
 
     private BigDecimal activeEnergyConsumption;
 
+    private BigDecimal activeEnergyFromStart;
+
     private LocalDateTime dateAndTimeOfSolarAndEnergy;
 
     private LocalDate operationDate;

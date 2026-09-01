@@ -1,9 +1,6 @@
 package com.mvrtechnology.plcdata.service;
 import com.mvrtechnology.plcdata.cache.PlantCache;
-import com.mvrtechnology.plcdata.dtos.PlantSolarResponseDTO;
-import com.mvrtechnology.plcdata.dtos.SolarAndEnergyDateRangeSummaryDTO;
-import com.mvrtechnology.plcdata.dtos.SolarDataResponseDTO;
-import com.mvrtechnology.plcdata.dtos.SolarDayWiseResponseDTO;
+import com.mvrtechnology.plcdata.dtos.*;
 import com.mvrtechnology.plcdata.entity.*;
 import com.mvrtechnology.plcdata.repository.ISolarAndEnergyDataRepo;
 import com.mvrtechnology.plcdata.repository.ISolarAndEnergyDataRepoImpl;
