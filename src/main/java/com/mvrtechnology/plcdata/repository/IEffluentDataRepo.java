@@ -188,58 +188,161 @@ public interface IEffluentDataRepo extends JpaRepository<EffluentData,Long>
         ISNULL(AVG(e.TSS), 0)           AS avgTSS,
         ISNULL(AVG(e.Temperature), 0)   AS avgTemperature,
         ISNULL(AVG(e.TN), 0)            AS avgTN,
-        ISNULL(AVG(e.Flow), 0)          AS avgFlow,
-        ISNULL(AVG(e.Velocity), 0)      AS avgVelocity,
 
-        ISNULL(
-            (
-                ISNULL
-                (
-                    (
-                        SELECT TOP (1)
-                            ed.Cumulative_Flow
-                        FROM Effluent_Data ed
-                        WHERE ed.Plant_Id = e.Plant_Id
-                          AND ed.Operation_Date = :operationDate
-                          AND ed.Cumulative_Flow IS NOT NULL
-                          AND ed.Cumulative_Flow <> 0
-                        ORDER BY ed.Date_And_Time_Of_Effluent DESC
-                    ),
-                    0
-                )
-            )
-            -
-            ISNULL
-            (
-                (
-                    SELECT TOP (1)
-                        ed.Cumulative_Flow
-                    FROM Effluent_Data ed
-                    WHERE ed.Plant_Id = e.Plant_Id
-                      AND ed.Operation_Date = :operationDate
-                      AND ed.Cumulative_Flow IS NOT NULL
-                      AND ed.Cumulative_Flow <> 0
-                    ORDER BY ed.Date_And_Time_Of_Effluent ASC
-                ),
-                0
-            ),
-            0
-        ) AS cumulativeFlow
+        ISNULL(firstFlow.cumulativeFlow, 0)
+            AS flowMeterReadingAm,
+
+        ISNULL(lastFlow.cumulativeFlow, 0)
+            AS flowMeterReadingPm,
+
+        ISNULL(lastFlow.cumulativeFlow, 0)
+        -
+        ISNULL(firstFlow.cumulativeFlow, 0)
+            AS cumulativeFlow
 
     FROM Effluent_Data e
 
     INNER JOIN Plant_Details p
         ON p.Plant_Id = e.Plant_Id
 
+    OUTER APPLY
+    (
+        SELECT TOP (1)
+            ed.Cumulative_Flow AS cumulativeFlow
+
+        FROM Effluent_Data ed
+
+        WHERE ed.Plant_Id = e.Plant_Id
+          AND ed.Operation_Date = :operationDate
+          AND ed.Cumulative_Flow IS NOT NULL
+          AND ed.Cumulative_Flow <> 0
+
+        ORDER BY ed.Date_And_Time_Of_Effluent ASC
+
+    ) firstFlow
+
+    OUTER APPLY
+    (
+        SELECT TOP (1)
+            ed.Cumulative_Flow AS cumulativeFlow
+
+        FROM Effluent_Data ed
+
+        WHERE ed.Plant_Id = e.Plant_Id
+          AND ed.Operation_Date = :operationDate
+          AND ed.Cumulative_Flow IS NOT NULL
+          AND ed.Cumulative_Flow <> 0
+
+        ORDER BY ed.Date_And_Time_Of_Effluent DESC
+
+    ) lastFlow
+
     WHERE e.Operation_Date = :operationDate
 
     GROUP BY
         e.Plant_Id,
-        p.Plant_Name
+        p.Plant_Name,
+        firstFlow.cumulativeFlow,
+        lastFlow.cumulativeFlow
 
     ORDER BY
         e.Plant_Id
 
     """, nativeQuery = true)
     List<AllPlantEffluentProjection> getAllPlantsAverageByDate(LocalDate operationDate);
+
+
+//    @Query(value = """
+//    SELECT
+//
+//        e.Plant_Id AS plantId,
+//
+//        p.Plant_Name AS plantName,
+//
+//        ISNULL(AVG(e.PH), 0)            AS avgPH,
+//        ISNULL(AVG(e.COD), 0)           AS avgCOD,
+//        ISNULL(AVG(e.BOD), 0)           AS avgBOD,
+//        ISNULL(AVG(e.TSS), 0)           AS avgTSS,
+//        ISNULL(AVG(e.Temperature), 0)   AS avgTemperature,
+//        ISNULL(AVG(e.TN), 0)            AS avgTN,
+//
+//        ISNULL(
+//                            (
+//                                SELECT TOP (1)
+//                                    ed.Cumulative_Flow
+//                                FROM Effluent_Data ed
+//                                WHERE ed.Plant_Id = e.Plant_Id
+//                                  AND ed.Operation_Date = :operationDate
+//                                  AND ed.Cumulative_Flow IS NOT NULL
+//                                  AND ed.Cumulative_Flow <> 0
+//                                ORDER BY ed.Date_And_Time_Of_Effluent ASC
+//                            ),
+//                            0
+//                        ) AS flowMeterReadingAm,
+//
+//                        ISNULL(
+//                            (
+//                                SELECT TOP (1)
+//                                    ed.Cumulative_Flow
+//                                FROM Effluent_Data ed
+//                                WHERE ed.Plant_Id = e.Plant_Id
+//                                  AND ed.Operation_Date = :operationDate
+//                                  AND ed.Cumulative_Flow IS NOT NULL
+//                                  AND ed.Cumulative_Flow <> 0
+//                                ORDER BY ed.Date_And_Time_Of_Effluent DESC
+//                            ),
+//                            0
+//                        ) AS flowMeterReadingPm,
+//
+//        ISNULL(
+//            (
+//                ISNULL
+//                (
+//                    (
+//                        SELECT TOP (1)
+//                            ed.Cumulative_Flow
+//                        FROM Effluent_Data ed
+//                        WHERE ed.Plant_Id = e.Plant_Id
+//                          AND ed.Operation_Date = :operationDate
+//                          AND ed.Cumulative_Flow IS NOT NULL
+//                          AND ed.Cumulative_Flow <> 0
+//                        ORDER BY ed.Date_And_Time_Of_Effluent DESC
+//                    ),
+//                    0
+//                )
+//            )
+//            -
+//            ISNULL
+//            (
+//                (
+//                    SELECT TOP (1)
+//                        ed.Cumulative_Flow
+//                    FROM Effluent_Data ed
+//                    WHERE ed.Plant_Id = e.Plant_Id
+//                      AND ed.Operation_Date = :operationDate
+//                      AND ed.Cumulative_Flow IS NOT NULL
+//                      AND ed.Cumulative_Flow <> 0
+//                    ORDER BY ed.Date_And_Time_Of_Effluent ASC
+//                ),
+//                0
+//            ),
+//            0
+//        ) AS cumulativeFlow
+//
+//    FROM Effluent_Data e
+//
+//    INNER JOIN Plant_Details p
+//        ON p.Plant_Id = e.Plant_Id
+//
+//    WHERE e.Operation_Date = :operationDate
+//
+//    GROUP BY
+//        e.Plant_Id,
+//        p.Plant_Name
+//
+//    ORDER BY
+//        e.Plant_Id
+//
+//    """, nativeQuery = true)
+//    List<AllPlantEffluentProjection> getAllPlantsAverageByDate(LocalDate operationDate);
 }

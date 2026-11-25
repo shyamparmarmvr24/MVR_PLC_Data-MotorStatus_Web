@@ -87,7 +87,9 @@ public class MotorStatusService
             dto.setHotWaterInlet(temp[3] * 0.1);
             dto.setHotWaterOutlet(temp[4] * 0.1);
 
-            dto.setScreenChamberLevel(ModbusReader.readWord(connection, 40602)*1.0);
+            dto.setScreenChamberLevel(ModbusReader.readFloat(connection, 40602)*1.0);
+            dto.setSludgeTankLevel(ModbusReader.readFloat(connection,40552)*1.0);
+            dto.setSludgeTankTotalCapacity(ModbusReader.readFloat(connection,40548)*1.0);
 
         }
         catch (Exception e)

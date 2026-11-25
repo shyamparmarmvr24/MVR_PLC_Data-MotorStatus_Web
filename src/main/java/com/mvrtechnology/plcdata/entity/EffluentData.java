@@ -15,6 +15,11 @@ import java.time.LocalDateTime;
                 @Index(
                         name = "IDX_EFFLUENT_PLANT_DATE_TIME",
                         columnList = "Plant_Id,Operation_Date,Date_And_Time_Of_Effluent"
+                ),
+
+                @Index(
+                        name = "IDX_EFFLUENT_DATE_PLANT_TIME",
+                        columnList = "Operation_Date,Plant_Id,Date_And_Time_Of_Effluent"
                 )
         }
 )

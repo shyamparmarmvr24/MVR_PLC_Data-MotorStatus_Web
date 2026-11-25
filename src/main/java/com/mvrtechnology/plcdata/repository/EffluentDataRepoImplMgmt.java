@@ -374,16 +374,31 @@ public class EffluentDataRepoImplMgmt implements IEffluentDataRepoImpl
 
                     dto.setAvgTN(projection.getAvgTN());
 
-                    dto.setAvgFlow(
-                            projection.getAvgFlow() != null
-                                    ? projection.getAvgFlow() * 1000
-                                    : 0D
+                    dto.setFlowMeterReadingAm(
+                            projection.getFlowMeterReadingAm() != null
+                                    ? projection.getFlowMeterReadingAm()
+                                    : BigDecimal.ZERO
                     );
 
-                    dto.setAvgVelocity(
-                            projection.getAvgVelocity()
+                    dto.setFlowMeterReadingPm(
+                            projection.getFlowMeterReadingPm() != null
+                                    ? projection.getFlowMeterReadingPm()
+                                    : BigDecimal.ZERO
                     );
 
+//                    dto.setFlowMeterReadingAm(
+//                            projection.getFlowMeterReadingAm() != null
+//                                    ? projection.getFlowMeterReadingAm()
+//                                    .multiply(BigDecimal.valueOf(1000))
+//                                    : BigDecimal.ZERO
+//                    );
+//
+//                    dto.setFlowMeterReadingPm(
+//                            projection.getFlowMeterReadingPm() != null
+//                                    ? projection.getFlowMeterReadingPm()
+//                                    .multiply(BigDecimal.valueOf(1000))
+//                                    : BigDecimal.ZERO
+//                    );
 
                     dto.setCumulativeFlow(
                             projection.getCumulativeFlow() != null

@@ -1,5 +1,7 @@
 package com.mvrtechnology.plcdata.projection;
 
+import java.math.BigDecimal;
+
 public interface AllPlantEffluentProjection
 {
 
@@ -19,9 +21,9 @@ public interface AllPlantEffluentProjection
 
     Double getAvgTN();
 
-    Double getAvgFlow();
-
-    Double getAvgVelocity();
-
     Double getCumulativeFlow();
+
+    BigDecimal getFlowMeterReadingAm();
+
+    BigDecimal getFlowMeterReadingPm();
 }

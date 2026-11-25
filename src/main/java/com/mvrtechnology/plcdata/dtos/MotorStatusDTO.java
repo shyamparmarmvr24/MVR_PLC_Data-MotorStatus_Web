@@ -66,4 +66,6 @@ public class MotorStatusDTO
     private Double pyrolyzerMiddle;
     private Double pyrolyzerBottom;
     private Double screenChamberLevel;
+    private Double sludgeTankLevel;
+    private Double sludgeTankTotalCapacity;
 }
